@@ -19,6 +19,7 @@ async function insertSchool(data) {
         .insert([{
             jenjang: data.jenjang,
             nama_sekolah: data.nama_sekolah,
+            nama_kepsek: data.nama_kepsek, // <--- TAMBAHKAN INI
             npsn: data.npsn,
             alamat_sekolah: data.alamat_sekolah,
             nama_pic: data.nama_pic,
