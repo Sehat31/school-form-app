@@ -258,6 +258,33 @@ async function handleSubmit(event) {
             spp_bulanan: document.getElementById('spp_bulanan').value.replace(/\./g, '')
         };
 
+        // 🔍 CEK NPSN DUPlikat SEBELUM SIMPAN
+        const npsn = formData.npsn;
+        console.log('Mengecek NPSN:', npsn);
+        
+        const { data: existingSchools, error: checkError } = await db
+            .from('sekolah')
+            .select('npsn, nama_sekolah')
+            .eq('npsn', npsn);
+
+        if (checkError) {
+            console.error('Error saat cek NPSN:', checkError);
+        }
+
+        // Jika ada data dengan NPSN yang sama
+        if (existingSchools && existingSchools.length > 0) {
+            const namaSekolahLama = existingSchools[0].nama_sekolah;
+            
+            // Tampilkan error dengan nama sekolah yang sudah pakai NPSN ini
+            showToast(` NPSN Duplikat! NPSN "${npsn}" sudah digunakan oleh sekolah "${namaSekolahLama}". Silakan gunakan NPSN yang berbeda.`, 'error');
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save"></i> Simpan & Lanjutkan ke MBG';
+            lucide.createIcons();
+            return; // Hentikan proses simpan
+        }
+
+        // Jika tidak ada duplikat, lanjutkan simpan
         await insertSchool(formData);
         showToast('Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
 
