@@ -35,4 +35,3 @@ async function loadSchoolInfo() {
 
     document.getElementById('schoolInfoDisplay').style.display = 'block';
 }
-
