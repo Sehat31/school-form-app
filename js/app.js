@@ -258,7 +258,7 @@ async function handleSubmit(event) {
             spp_bulanan: document.getElementById('spp_bulanan').value.replace(/\./g, '')
         };
 
-        // 🔍 CEK NPSN DUPlikat SEBELUM SIMPAN
+        // 🔍 CEK NPSN DUPLIKAT SEBELUM SIMPAN
         const npsn = formData.npsn;
         console.log('Mengecek NPSN:', npsn);
         
@@ -271,20 +271,16 @@ async function handleSubmit(event) {
             console.error('Error saat cek NPSN:', checkError);
         }
 
-        // Jika ada data dengan NPSN yang sama
         if (existingSchools && existingSchools.length > 0) {
             const namaSekolahLama = existingSchools[0].nama_sekolah;
-            
-            // Tampilkan error dengan nama sekolah yang sudah pakai NPSN ini
             showToast(` NPSN Duplikat! NPSN "${npsn}" sudah digunakan oleh sekolah "${namaSekolahLama}". Silakan gunakan NPSN yang berbeda.`, 'error');
             
             btn.disabled = false;
             btn.innerHTML = '<i data-lucide="save"></i> Simpan & Lanjutkan ke MBG';
             lucide.createIcons();
-            return; // Hentikan proses simpan
+            return;
         }
 
-        // Jika tidak ada duplikat, lanjutkan simpan
         await insertSchool(formData);
         showToast('Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
 
@@ -343,46 +339,48 @@ async function loadSchoolInfo() {
     const infoDisplay = document.getElementById('schoolInfoDisplay');
     
     if (!select) {
-        console.error('Dropdown sekolah tidak ditemukan di HTML!');
+        console.error('Dropdown sekolah tidak ditemukan!');
         return;
     }
 
     const npsn = select.value;
 
-    // Jika tidak ada NPSN yang dipilih, sembunyikan info
     if (!npsn) {
         if (infoDisplay) infoDisplay.style.display = 'none';
         return;
     }
 
-    // Cek apakah database client (db) sudah siap
     if (typeof db === 'undefined') {
-        console.error('Database client (db) belum terinisialisasi! Cek file supabaseClient.js.');
-        if (infoDisplay) infoDisplay.style.display = 'none';
+        console.error('Database client belum siap!');
         return;
     }
 
     try {
-        console.log('Mengambil data sekolah untuk NPSN:', npsn);
+        console.log('Mengambil data untuk NPSN:', npsn);
         
-        const { data: school, error } = await db
+        const { data: schools, error } = await db
             .from('sekolah')
             .select('*')
-            .eq('npsn', npsn)
-            .single();
+            .eq('npsn', npsn);
+
+        console.log('Hasil query:', schools, 'Error:', error);
 
         if (error) {
-            console.warn('Supabase mengembalikan error:', error.message);
+            console.error('Supabase error:', error.message);
+            if (infoDisplay) infoDisplay.style.display = 'none';
+            return;
         }
 
         if (infoDisplay) {
+            const school = schools && schools.length > 0 ? schools[0] : null;
+            
             if (school) {
-                // Data ditemukan di database
                 document.getElementById('infoNamaSekolah').textContent = school.nama_sekolah || '-';
                 document.getElementById('infoJenjang').textContent = school.jenjang || '-';
                 document.getElementById('infoKepsek').textContent = school.nama_kepsek || '-';
+                console.log('Data sekolah ditemukan:', school);
             } else {
-                // Data tidak ditemukan di database, ambil dari teks dropdown
+                console.warn('Data tidak ditemukan untuk NPSN:', npsn);
                 const selectedOption = select.options[select.selectedIndex];
                 const namaDariDropdown = selectedOption ? selectedOption.textContent.split(' - ')[1] : '-';
                 
@@ -393,7 +391,7 @@ async function loadSchoolInfo() {
             infoDisplay.style.display = 'block';
         }
     } catch (err) {
-        console.error('Gagal memuat info sekolah:', err);
+        console.error('Exception:', err);
         if (infoDisplay) infoDisplay.style.display = 'none';
     }
 }
@@ -421,8 +419,57 @@ async function uploadMBGFile() {
         const selectedOption = selectNpsn.options[selectNpsn.selectedIndex];
         const sekolahId = selectedOption.dataset.sekolahId;
 
+        // 🔍 CEK NIK DUPLIKAT DI SEKOLAH LAIN (Cross-School Check)
+        const allNIKsToUpload = [];
+        parsedPMData.forEach(r => {
+            const nik = String(r['NIK (16 Digit)'] || r.NIK || '').trim();
+            if (nik) allNIKsToUpload.push(nik);
+        });
+        parsedGuruData.forEach(r => {
+            const nik = String(r['NIK (16 Digit)'] || r.NIK || '').trim();
+            if (nik) allNIKsToUpload.push(nik);
+        });
+
+        if (allNIKsToUpload.length > 0) {
+            // Cek di tabel PM
+            const { data: existingPM, error: pmError } = await db
+                .from('pm_mbg')
+                .select('nik, sekolah_id')
+                .in('nik', allNIKsToUpload);
+
+            if (pmError) console.error('Error cek PM:', pmError);
+
+            // Cek di tabel Guru
+            const { data: existingGuru, error: guruError } = await db
+                .from('guru_tendik')
+                .select('nik, sekolah_id')
+                .in('nik', allNIKsToUpload);
+
+            if (guruError) console.error('Error cek Guru:', guruError);
+
+            // Gabungkan hasil
+            const allExisting = [...(existingPM || []), ...(existingGuru || [])];
+            
+            // Filter yang ada di sekolah LAIN
+            const crossSchoolDuplicates = allExisting.filter(item => 
+                String(item.sekolah_id) !== String(sekolahId)
+            );
+
+            if (crossSchoolDuplicates.length > 0) {
+                const dupNIKs = crossSchoolDuplicates.map(d => d.nik).join(', ');
+                showToast(`❌ NIK sudah ada di sekolah lain! NIK: ${dupNIKs}`, 'error');
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="cloud-upload"></i> Upload & Simpan ke Database';
+                lucide.createIcons();
+                return;
+            }
+        }
+
+        // Upload file to storage
         await uploadFileToStorage(selectedFile);
 
+        // Insert PM data
         if (parsedPMData.length > 0) {
             const pmRecords = parsedPMData.map(r => ({
                 sekolah_id: parseInt(sekolahId),
@@ -440,6 +487,7 @@ async function uploadMBGFile() {
             await insertBulkPM(pmRecords);
         }
 
+        // Insert Guru data
         if (parsedGuruData.length > 0) {
             const guruRecords = parsedGuruData.map(r => ({
                 sekolah_id: parseInt(sekolahId),
@@ -677,6 +725,15 @@ function renderTable(headers, data, renderFn) {
 function renderSekolahTable(row, idx) {
     const nomorHP = renderSensitiveData(row.nomor_hp, 'phone', row.id);
     
+    // 🔒 Tombol hapus hanya aktif jika sudah unlock
+    const deleteBtn = sensitiveDataUnlocked 
+        ? `<button class="btn-icon delete" title="Hapus" onclick="deleteSekolah(${row.id})">
+             <i data-lucide="trash-2"></i>
+           </button>`
+        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
+             <i data-lucide="lock"></i>
+           </button>`;
+    
     return `
         <td>${idx + 1}</td>
         <td><span class="badge">${row.jenjang}</span></td>
@@ -689,9 +746,7 @@ function renderSekolahTable(row, idx) {
         <td>Rp ${parseInt(row.spp_bulanan).toLocaleString('id-ID')}</td>
         <td>
             <div class="action-btns">
-                <button class="btn-icon delete" title="Hapus" onclick="deleteSekolah(${row.id})">
-                    <i data-lucide="trash-2"></i>
-                </button>
+                ${deleteBtn}
             </div>
         </td>
     `;
@@ -701,6 +756,15 @@ function renderPMTable(row, idx) {
     const namaSekolah = row.sekolah?.nama_sekolah || '-';
     const nik = renderSensitiveData(row.nik, 'nik', row.id);
     const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
+    
+    // 🔒 Tombol hapus hanya aktif jika sudah unlock
+    const deleteBtn = sensitiveDataUnlocked 
+        ? `<button class="btn-icon delete" title="Hapus" onclick="deletePMData(${row.id})">
+             <i data-lucide="trash-2"></i>
+           </button>`
+        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
+             <i data-lucide="lock"></i>
+           </button>`;
     
     return `
         <td>${idx + 1}</td>
@@ -715,9 +779,7 @@ function renderPMTable(row, idx) {
         <td>${row.kelas || '-'}</td>
         <td>
             <div class="action-btns">
-                <button class="btn-icon delete" title="Hapus" onclick="deletePMData(${row.id})">
-                    <i data-lucide="trash-2"></i>
-                </button>
+                ${deleteBtn}
             </div>
         </td>
     `;
@@ -727,6 +789,15 @@ function renderGuruTable(row, idx) {
     const namaSekolah = row.sekolah?.nama_sekolah || '-';
     const nik = renderSensitiveData(row.nik, 'nik', row.id);
     const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
+    
+    // 🔒 Tombol hapus hanya aktif jika sudah unlock
+    const deleteBtn = sensitiveDataUnlocked 
+        ? `<button class="btn-icon delete" title="Hapus" onclick="deleteGuruData(${row.id})">
+             <i data-lucide="trash-2"></i>
+           </button>`
+        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
+             <i data-lucide="lock"></i>
+           </button>`;
     
     return `
         <td>${idx + 1}</td>
@@ -739,12 +810,18 @@ function renderGuruTable(row, idx) {
         <td>${row.jabatan || '-'}</td>
         <td>
             <div class="action-btns">
-                <button class="btn-icon delete" title="Hapus" onclick="deleteGuruData(${row.id})">
-                    <i data-lucide="trash-2"></i>
-                </button>
+                ${deleteBtn}
             </div>
         </td>
     `;
+}
+
+/**
+ * Tampilkan warning jika mencoba hapus tanpa unlock
+ */
+function showUnlockWarning() {
+    showToast('🔒 Masukkan password 2024 untuk membuka sensor sebelum menghapus data!', 'error');
+    openPasswordModal('unlock');
 }
 
 function formatDate(dateStr) {
@@ -757,33 +834,63 @@ function formatDate(dateStr) {
 }
 
 async function deleteSekolah(id) {
+    // 🔒 Cek apakah sudah unlock
+    if (!sensitiveDataUnlocked) {
+        showUnlockWarning();
+        return;
+    }
+    
     if (!confirm('Yakin ingin menghapus data sekolah ini? Data MBG terkait juga akan terhapus!')) return;
     try {
         await deleteSchool(id);
         showToast('Data sekolah berhasil dihapus', 'success');
-        loadAllData();
+        
+        // Hapus dari array lokal agar tabel langsung update
+        allSekolahData = allSekolahData.filter(d => d.id !== id);
+        updateStats();
+        filterData();
     } catch (error) {
         showToast('Gagal menghapus data', 'error');
     }
 }
 
 async function deletePMData(id) {
+    // 🔒 Cek apakah sudah unlock
+    if (!sensitiveDataUnlocked) {
+        showUnlockWarning();
+        return;
+    }
+    
     if (!confirm('Yakin ingin menghapus data ini?')) return;
     try {
         await deletePM(id);
         showToast('Data PM berhasil dihapus', 'success');
-        loadAllData();
+        
+        // Hapus dari array lokal agar tabel langsung update
+        allPMData = allPMData.filter(d => d.id !== id);
+        updateStats();
+        filterData();
     } catch (error) {
         showToast('Gagal menghapus data', 'error');
     }
 }
 
 async function deleteGuruData(id) {
+    // 🔒 Cek apakah sudah unlock
+    if (!sensitiveDataUnlocked) {
+        showUnlockWarning();
+        return;
+    }
+    
     if (!confirm('Yakin ingin menghapus data ini?')) return;
     try {
         await deleteGuru(id);
         showToast('Data Guru berhasil dihapus', 'success');
-        loadAllData();
+        
+        // Hapus dari array lokal agar tabel langsung update
+        allGuruData = allGuruData.filter(d => d.id !== id);
+        updateStats();
+        filterData();
     } catch (error) {
         showToast('Gagal menghapus data', 'error');
     }
