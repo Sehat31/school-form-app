@@ -7,50 +7,232 @@ let allPMData = [];
 let allGuruData = [];
 let currentDataTab = 'sekolah';
 
+// 🔒 SECURITY STATE - Status sensor data
+let sensitiveDataUnlocked = false;
+const SENSITIVE_PASSWORD = '2024'; // Password untuk buka sensor
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     loadSchoolDropdown();
+    
+    // Cek sessionStorage untuk status unlock
+    if (sessionStorage.getItem('sensitiveDataUnlocked') === 'true') {
+        sensitiveDataUnlocked = true;
+        updateSecurityBar();
+    }
 });
+
+// ============================================
+// 🔒 SECURITY FUNCTIONS - Sensor Data
+// ============================================
+
+/**
+ * Mask NIK - tampilkan titik-titik
+ */
+function maskNIK(nik) {
+    if (!nik) return '••••••••••••••••';
+    const str = String(nik);
+    // Tampilkan 4 digit terakhir saja
+    if (str.length >= 4) {
+        return '•'.repeat(str.length - 4) + str.slice(-4);
+    }
+    return '•'.repeat(str.length);
+}
+
+/**
+ * Mask Nomor HP - tampilkan titik-titik
+ */
+function maskPhone(phone) {
+    if (!phone) return '••••••••••';
+    const str = String(phone);
+    // Tampilkan 4 digit terakhir saja
+    if (str.length >= 4) {
+        return '•'.repeat(str.length - 4) + str.slice(-4);
+    }
+    return '•'.repeat(str.length);
+}
+
+/**
+ * Render data sensitif dengan tombol reveal
+ */
+function renderSensitiveData(value, type, id) {
+    const masked = type === 'nik' ? maskNIK(value) : maskPhone(value);
+    const icon = sensitiveDataUnlocked ? 'eye-off' : 'eye';
+    const displayValue = sensitiveDataUnlocked ? value : masked;
+    const revealedClass = sensitiveDataUnlocked ? 'revealed' : '';
+    
+    return `
+        <span class="masked-data ${revealedClass}" data-id="${id}" data-type="${type}" data-original="${value}">
+            <span class="data-value">${displayValue}</span>
+            <button class="reveal-btn" onclick="toggleReveal(${id}, '${type}', event)" title="${sensitiveDataUnlocked ? 'Sembunyikan' : 'Lihat data'}">
+                <i data-lucide="${icon}"></i>
+            </button>
+        </span>
+    `;
+}
+
+/**
+ * Toggle reveal untuk single data (butuh password jika belum unlock)
+ */
+function toggleReveal(id, type, event) {
+    if (event) event.stopPropagation();
+    
+    if (sensitiveDataUnlocked) {
+        // Sudah unlock - sembunyikan semua
+        lockAllData();
+    } else {
+        // Belum unlock - minta password
+        openPasswordModal('unlock');
+    }
+}
+
+/**
+ * Buka modal password
+ */
+function openPasswordModal(action) {
+    const modal = document.getElementById('passwordModal');
+    const input = document.getElementById('passwordInput');
+    const error = document.getElementById('passwordError');
+    const title = document.getElementById('passwordModalTitle');
+    
+    if (action === 'unlock') {
+        title.innerHTML = '<i data-lucide="shield-lock"></i> Verifikasi Keamanan';
+    }
+    
+    input.value = '';
+    error.style.display = 'none';
+    error.classList.remove('show');
+    modal.classList.add('show');
+    
+    setTimeout(() => {
+        input.focus();
+        lucide.createIcons();
+    }, 100);
+}
+
+/**
+ * Tutup modal password
+ */
+function closePasswordModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const modal = document.getElementById('passwordModal');
+    modal.classList.remove('show');
+}
+
+/**
+ * Toggle visibility password input
+ */
+function togglePasswordVisibility() {
+    const input = document.getElementById('passwordInput');
+    const icon = document.getElementById('passwordEyeIcon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+    }
+    lucide.createIcons();
+}
+
+/**
+ * Cek password
+ */
+function checkPassword() {
+    const input = document.getElementById('passwordInput');
+    const error = document.getElementById('passwordError');
+    const password = input.value;
+    
+    if (password === SENSITIVE_PASSWORD) {
+        // Password benar - unlock data
+        sensitiveDataUnlocked = true;
+        sessionStorage.setItem('sensitiveDataUnlocked', 'true');
+        closePasswordModal();
+        updateSecurityBar();
+        filterData(); // Re-render tabel
+        showToast('Data sensitif berhasil dibuka!', 'success');
+    } else {
+        // Password salah
+        error.style.display = 'flex';
+        error.classList.add('show');
+        input.value = '';
+        input.focus();
+        
+        // Shake animation
+        setTimeout(() => {
+            error.classList.remove('show');
+        }, 2000);
+    }
+}
+
+/**
+ * Kunci ulang semua data
+ */
+function lockAllData() {
+    sensitiveDataUnlocked = false;
+    sessionStorage.removeItem('sensitiveDataUnlocked');
+    updateSecurityBar();
+    filterData(); // Re-render tabel
+    showToast('Data sensitif dikunci kembali', 'success');
+}
+
+/**
+ * Update tampilan security bar
+ */
+function updateSecurityBar() {
+    const bar = document.getElementById('securityBar');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const lockBtn = document.getElementById('lockBtn');
+    
+    if (!bar) return;
+    
+    if (sensitiveDataUnlocked) {
+        bar.classList.add('unlocked');
+        bar.querySelector('.security-info span').innerHTML = 
+            'Data sensitif (NIK & No HP) <strong>TERBUKA</strong> - berhati-hatilah!';
+        unlockBtn.style.display = 'none';
+        lockBtn.style.display = 'inline-flex';
+    } else {
+        bar.classList.remove('unlocked');
+        bar.querySelector('.security-info span').innerHTML = 
+            'Data sensitif (NIK & No HP) <strong>disensor otomatis</strong> untuk keamanan';
+        unlockBtn.style.display = 'inline-flex';
+        lockBtn.style.display = 'none';
+    }
+    
+    lucide.createIcons();
+}
 
 // ============================================
 // NAVIGATION
 // ============================================
 
 function showPage(pageName, event) {
-    // Cegah default behavior dari link
-    if (event) {
-        event.preventDefault();
-    }
+    if (event) event.preventDefault();
 
-    // Hide all pages
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-    // Show target page
     const targetPage = document.getElementById(`page-${pageName}`);
-    if (targetPage) {
-        targetPage.classList.add('active');
-    }
+    if (targetPage) targetPage.classList.add('active');
 
-    // Update nav links
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     const activeLink = document.querySelector(`.nav-link[data-page="${pageName}"]`);
     if (activeLink) activeLink.classList.add('active');
 
-    // Load data if needed
-    if (pageName === 'data') loadAllData();
+    if (pageName === 'data') {
+        loadAllData();
+        updateSecurityBar();
+    }
     if (pageName === 'mbg') {
         loadSchoolDropdown();
         loadUploadedFiles();
     }
 
-    // Close mobile menu
     const navMenu = document.querySelector('.nav-menu');
     if (navMenu) navMenu.classList.remove('open');
 
     lucide.createIcons();
-
-    // Scroll to top
     window.scrollTo(0, 0);
 }
 
@@ -117,7 +299,6 @@ async function handleSubmit(event) {
         await insertSchool(formData);
         showToast('Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
 
-        // Auto-switch ke halaman MBG
         setTimeout(() => {
             showPage('mbg');
             const selectNpsn = document.getElementById('select_npsn_mbg');
@@ -229,10 +410,8 @@ async function uploadMBGFile() {
         const selectedOption = selectNpsn.options[selectNpsn.selectedIndex];
         const sekolahId = selectedOption.dataset.sekolahId;
 
-        // Upload file to storage
         await uploadFileToStorage(selectedFile);
 
-        // Insert PM data
         if (parsedPMData.length > 0) {
             const pmRecords = parsedPMData.map(r => ({
                 sekolah_id: parseInt(sekolahId),
@@ -250,7 +429,6 @@ async function uploadMBGFile() {
             await insertBulkPM(pmRecords);
         }
 
-        // Insert Guru data
         if (parsedGuruData.length > 0) {
             const guruRecords = parsedGuruData.map(r => ({
                 sekolah_id: parseInt(sekolahId),
@@ -282,7 +460,6 @@ async function uploadMBGFile() {
 function parseTanggalLahir(tanggal) {
     if (!tanggal) return null;
     
-    // Jika sudah Date object dari Excel
     if (tanggal instanceof Date) {
         const year = tanggal.getFullYear();
         const month = String(tanggal.getMonth() + 1).padStart(2, '0');
@@ -290,13 +467,11 @@ function parseTanggalLahir(tanggal) {
         return `${year}-${month}-${day}`;
     }
     
-    // Format: dd-mm-yyyy
     const parts = String(tanggal).split('-');
     if (parts.length === 3) {
         return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
     
-    // Format: dd/mm/yyyy
     const parts2 = String(tanggal).split('/');
     if (parts2.length === 3) {
         return `${parts2[2]}-${parts2[1]}-${parts2[0]}`;
@@ -402,7 +577,7 @@ function updateStats() {
 
 function filterData() {
     const searchInput = document.getElementById('searchInput');
-    const search = searchInput ? searchInput.value.toLowerCase() : '';
+    const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
     let data = [];
     let headers = [];
@@ -410,24 +585,56 @@ function filterData() {
 
     if (currentDataTab === 'sekolah') {
         headers = ['No', 'Jenjang', 'Nama Sekolah', 'Kepala Sekolah', 'NPSN', 'Alamat', 'Nama PIC', 'No. HP', 'SPP', 'Aksi'];
-        data = allSekolahData.filter(d =>
-            (d.nama_sekolah || '').toLowerCase().includes(search) ||
-            (d.npsn || '').includes(search)
-        );
+        // 🔍 Pencarian terhadap data ASLI (bukan data yang di-mask)
+        data = allSekolahData.filter(d => {
+            const searchFields = [
+                d.nama_sekolah,
+                d.nama_kepsek,
+                d.npsn,
+                d.alamat_sekolah,
+                d.nama_pic,
+                d.nomor_hp,  // Search terhadap nomor_hp asli
+                d.jenjang,
+                String(d.spp_bulanan)
+            ].map(f => String(f || '').toLowerCase());
+            
+            return searchFields.some(field => field.includes(search));
+        });
         renderFn = renderSekolahTable;
     } else if (currentDataTab === 'pm') {
-        headers = ['No', 'Sekolah', 'NIK', 'NISN', 'Nama', 'Kelas', 'Jenis Kelamin', 'Aksi'];
-        data = allPMData.filter(d =>
-            (d.nama_lengkap || '').toLowerCase().includes(search) ||
-            (d.nisn || '').includes(search)
-        );
+        headers = ['No', 'Sekolah', 'NIK', 'NISN', 'Nama', 'Tempat Lahir', 'Tgl Lahir', 'JK', 'Orang Tua', 'Kelas', 'Aksi'];
+        // 🔍 Pencarian terhadap data ASLI (termasuk NIK asli)
+        data = allPMData.filter(d => {
+            const searchFields = [
+                d.nik,  // Search terhadap NIK asli
+                d.nisn,
+                d.nama_lengkap,
+                d.tempat_lahir,
+                d.tanggal_lahir,
+                d.jenis_kelamin,
+                d.nama_orang_tua,
+                d.kelas,
+                d.sekolah?.nama_sekolah
+            ].map(f => String(f || '').toLowerCase());
+            
+            return searchFields.some(field => field.includes(search));
+        });
         renderFn = renderPMTable;
     } else {
-        headers = ['No', 'Sekolah', 'NIK', 'Nama', 'Jabatan', 'Jenis Kelamin', 'Aksi'];
-        data = allGuruData.filter(d =>
-            (d.nama_lengkap || '').toLowerCase().includes(search) ||
-            (d.jabatan || '').toLowerCase().includes(search)
-        );
+        headers = ['No', 'Sekolah', 'NIK', 'Nama', 'Tempat Lahir', 'Tgl Lahir', 'JK', 'Jabatan', 'Aksi'];
+        data = allGuruData.filter(d => {
+            const searchFields = [
+                d.nik,  // Search terhadap NIK asli
+                d.nama_lengkap,
+                d.tempat_lahir,
+                d.tanggal_lahir,
+                d.jenis_kelamin,
+                d.jabatan,
+                d.sekolah?.nama_sekolah
+            ].map(f => String(f || '').toLowerCase());
+            
+            return searchFields.some(field => field.includes(search));
+        });
         renderFn = renderGuruTable;
     }
 
@@ -459,6 +666,9 @@ function renderTable(headers, data, renderFn) {
 }
 
 function renderSekolahTable(row, idx) {
+    // 🔒 Nomor HP disensor
+    const nomorHP = renderSensitiveData(row.nomor_hp, 'phone', row.id);
+    
     return `
         <td>${idx + 1}</td>
         <td><span class="badge">${row.jenjang}</span></td>
@@ -467,7 +677,7 @@ function renderSekolahTable(row, idx) {
         <td><code>${row.npsn}</code></td>
         <td>${row.alamat_sekolah}</td>
         <td>${row.nama_pic}</td>
-        <td>${row.nomor_hp}</td>
+        <td>${nomorHP}</td>
         <td>Rp ${parseInt(row.spp_bulanan).toLocaleString('id-ID')}</td>
         <td>
             <div class="action-btns">
@@ -481,14 +691,23 @@ function renderSekolahTable(row, idx) {
 
 function renderPMTable(row, idx) {
     const namaSekolah = row.sekolah?.nama_sekolah || '-';
+    // 🔒 NIK disensor
+    const nik = renderSensitiveData(row.nik, 'nik', row.id);
+    
+    // Format tanggal lahir
+    const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
+    
     return `
         <td>${idx + 1}</td>
         <td>${namaSekolah}</td>
-        <td><code>${row.nik}</code></td>
-        <td>${row.nisn}</td>
+        <td>${nik}</td>
+        <td>${row.nisn || '-'}</td>
         <td>${row.nama_lengkap}</td>
-        <td>${row.kelas}</td>
-        <td>${row.jenis_kelamin}</td>
+        <td>${row.tempat_lahir || '-'}</td>
+        <td>${tglLahir}</td>
+        <td>${row.jenis_kelamin || '-'}</td>
+        <td>${row.nama_orang_tua || '-'}</td>
+        <td>${row.kelas || '-'}</td>
         <td>
             <div class="action-btns">
                 <button class="btn-icon delete" title="Hapus" onclick="deletePMData(${row.id})">
@@ -501,13 +720,20 @@ function renderPMTable(row, idx) {
 
 function renderGuruTable(row, idx) {
     const namaSekolah = row.sekolah?.nama_sekolah || '-';
+    // 🔒 NIK disensor
+    const nik = renderSensitiveData(row.nik, 'nik', row.id);
+    
+    const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
+    
     return `
         <td>${idx + 1}</td>
         <td>${namaSekolah}</td>
-        <td><code>${row.nik}</code></td>
+        <td>${nik}</td>
         <td>${row.nama_lengkap}</td>
-        <td>${row.jabatan}</td>
-        <td>${row.jenis_kelamin}</td>
+        <td>${row.tempat_lahir || '-'}</td>
+        <td>${tglLahir}</td>
+        <td>${row.jenis_kelamin || '-'}</td>
+        <td>${row.jabatan || '-'}</td>
         <td>
             <div class="action-btns">
                 <button class="btn-icon delete" title="Hapus" onclick="deleteGuruData(${row.id})">
@@ -516,6 +742,18 @@ function renderGuruTable(row, idx) {
             </div>
         </td>
     `;
+}
+
+/**
+ * Format tanggal dari yyyy-mm-dd ke dd-mm-yyyy
+ */
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const parts = String(dateStr).split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
 }
 
 async function deleteSekolah(id) {
@@ -556,6 +794,13 @@ async function deleteGuruData(id) {
 // ============================================
 
 function exportCurrentData() {
+    // 🔒 Jika data masih terkunci, minta password dulu sebelum export
+    if (!sensitiveDataUnlocked) {
+        showToast('Buka sensor data terlebih dahulu sebelum export!', 'error');
+        openPasswordModal('unlock');
+        return;
+    }
+    
     let exportData = [];
     let filename = '';
 
@@ -569,13 +814,17 @@ function exportCurrentData() {
     } else if (currentDataTab === 'pm') {
         exportData = allPMData.map((d, i) => ({
             'No': i + 1, 'Sekolah': d.sekolah?.nama_sekolah, 'NIK': d.nik, 'NISN': d.nisn,
-            'Nama': d.nama_lengkap, 'Kelas': d.kelas, 'Jenis Kelamin': d.jenis_kelamin
+            'Nama': d.nama_lengkap, 'Tempat Lahir': d.tempat_lahir, 
+            'Tanggal Lahir': d.tanggal_lahir, 'Jenis Kelamin': d.jenis_kelamin,
+            'Orang Tua': d.nama_orang_tua, 'Kelas': d.kelas
         }));
         filename = 'Export_Data_PM';
     } else {
         exportData = allGuruData.map((d, i) => ({
             'No': i + 1, 'Sekolah': d.sekolah?.nama_sekolah, 'NIK': d.nik,
-            'Nama': d.nama_lengkap, 'Jabatan': d.jabatan, 'Jenis Kelamin': d.jenis_kelamin
+            'Nama': d.nama_lengkap, 'Tempat Lahir': d.tempat_lahir,
+            'Tanggal Lahir': d.tanggal_lahir, 'Jenis Kelamin': d.jenis_kelamin,
+            'Jabatan': d.jabatan
         }));
         filename = 'Export_Data_Guru';
     }
