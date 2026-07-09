@@ -1,18 +1,18 @@
 // ============================================
 // SUPABASE CONFIGURATION
 // ============================================
-// GANTI DENGAN URL DAN KEY DARI SUPABASE KAMU
 const SUPABASE_URL = 'https://ngxnutcjejdxuqkirxvi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5neG51dGNqZWpkeHVxa2lyeHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODE2NjUsImV4cCI6MjA5OTE1NzY2NX0.GvhbH_cdLnDeGTXpYuvdT7Q_Uo5cTwN-13rTs4Tn-DI';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// PENTING: Gunakan nama 'db' bukan 'supabase' untuk menghindari konflik
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================
 // DATABASE FUNCTIONS - SEKOLAH
 // ============================================
 
 async function insertSchool(data) {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await db
         .from('sekolah')
         .insert([{
             jenjang: data.jenjang,
@@ -32,7 +32,7 @@ async function insertSchool(data) {
 }
 
 async function getAllSchools() {
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from('sekolah')
         .select('*')
         .order('created_at', { ascending: false });
@@ -42,7 +42,7 @@ async function getAllSchools() {
 }
 
 async function updateSchool(id, data) {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await db
         .from('sekolah')
         .update({
             jenjang: data.jenjang,
@@ -62,7 +62,7 @@ async function updateSchool(id, data) {
 }
 
 async function deleteSchool(id) {
-    const { error } = await supabase
+    const { error } = await db
         .from('sekolah')
         .delete()
         .eq('id', id);
@@ -75,7 +75,7 @@ async function deleteSchool(id) {
 // ============================================
 
 async function insertBulkPM(records) {
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from('pm_mbg')
         .insert(records)
         .select();
@@ -85,7 +85,7 @@ async function insertBulkPM(records) {
 }
 
 async function getAllPM() {
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from('pm_mbg')
         .select(`
             *,
@@ -98,7 +98,7 @@ async function getAllPM() {
 }
 
 async function deletePM(id) {
-    const { error } = await supabase
+    const { error } = await db
         .from('pm_mbg')
         .delete()
         .eq('id', id);
@@ -111,7 +111,7 @@ async function deletePM(id) {
 // ============================================
 
 async function insertBulkGuru(records) {
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from('guru_tendik')
         .insert(records)
         .select();
@@ -121,7 +121,7 @@ async function insertBulkGuru(records) {
 }
 
 async function getAllGuru() {
-    const { data, error } = await supabase
+    const { data, error } = await db
         .from('guru_tendik')
         .select(`
             *,
@@ -134,7 +134,7 @@ async function getAllGuru() {
 }
 
 async function deleteGuru(id) {
-    const { error } = await supabase
+    const { error } = await db
         .from('guru_tendik')
         .delete()
         .eq('id', id);
@@ -151,7 +151,7 @@ async function uploadFileToStorage(file) {
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `excels/${fileName}`;
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await db.storage
         .from('school-files')
         .upload(filePath, file, {
             cacheControl: '3600',
@@ -163,7 +163,7 @@ async function uploadFileToStorage(file) {
 }
 
 async function getUploadedFiles() {
-    const { data, error } = await supabase.storage
+    const { data, error } = await db.storage
         .from('school-files')
         .list('excels', {
             sortBy: { column: 'created_at', order: 'desc' }
@@ -174,14 +174,14 @@ async function getUploadedFiles() {
 }
 
 function getFileUrl(path) {
-    const { data } = supabase.storage
+    const { data } = db.storage
         .from('school-files')
         .getPublicUrl(path);
     return data.publicUrl;
 }
 
 async function deleteFileFromStorage(path) {
-    const { error } = await supabase.storage
+    const { error } = await db.storage
         .from('school-files')
         .remove([path]);
 
