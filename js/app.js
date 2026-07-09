@@ -88,9 +88,10 @@ async function handleSubmit(event) {
     lucide.createIcons();
 
     try {
-        const formData = {
+         const formData = {
             jenjang: document.getElementById('jenjang').value,
             nama_sekolah: document.getElementById('nama_sekolah').value,
+            nama_kepsek: document.getElementById('nama_kepsek').value, // <--- TAMBAHKAN INI
             npsn: document.getElementById('npsn').value,
             alamat_sekolah: document.getElementById('alamat_sekolah').value,
             nama_pic: document.getElementById('nama_pic').value,
@@ -114,6 +115,14 @@ async function handleSubmit(event) {
 function resetForm() {
     document.getElementById('schoolForm').reset();
 }
+        // Setelah sukses simpan sekolah, scroll ke bagian Upload MBG
+        showToast('Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
+        setTimeout(() => {
+            showPage('upload'); // Pindah ke tab Upload
+            scrollToSection('mbg-upload-section'); // Scroll ke area MBG
+            // Otomatis isi NPSN di dropdown MBG (akan kita buat di step berikutnya)
+            document.getElementById('select_npsn_mbg').value = formData.npsn;
+        }, 1000);
 
 // ============================================
 // UPLOAD FILE
