@@ -7,16 +7,15 @@ let allPMData = [];
 let allGuruData = [];
 let currentDataTab = 'sekolah';
 
-// 🔒 SECURITY STATE - Status sensor data
+// 🔒 SECURITY STATE
 let sensitiveDataUnlocked = false;
-const SENSITIVE_PASSWORD = '2024'; // Password untuk buka sensor
+const SENSITIVE_PASSWORD = '2024';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     loadSchoolDropdown();
     
-    // Cek sessionStorage untuk status unlock
     if (sessionStorage.getItem('sensitiveDataUnlocked') === 'true') {
         sensitiveDataUnlocked = true;
         updateSecurityBar();
@@ -24,38 +23,27 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================
-// 🔒 SECURITY FUNCTIONS - Sensor Data
+// 🔒 SECURITY FUNCTIONS
 // ============================================
 
-/**
- * Mask NIK - tampilkan titik-titik
- */
 function maskNIK(nik) {
     if (!nik) return '••••••••••••••••';
     const str = String(nik);
-    // Tampilkan 4 digit terakhir saja
     if (str.length >= 4) {
         return '•'.repeat(str.length - 4) + str.slice(-4);
     }
     return '•'.repeat(str.length);
 }
 
-/**
- * Mask Nomor HP - tampilkan titik-titik
- */
 function maskPhone(phone) {
     if (!phone) return '••••••••••';
     const str = String(phone);
-    // Tampilkan 4 digit terakhir saja
     if (str.length >= 4) {
         return '•'.repeat(str.length - 4) + str.slice(-4);
     }
     return '•'.repeat(str.length);
 }
 
-/**
- * Render data sensitif dengan tombol reveal
- */
 function renderSensitiveData(value, type, id) {
     const masked = type === 'nik' ? maskNIK(value) : maskPhone(value);
     const icon = sensitiveDataUnlocked ? 'eye-off' : 'eye';
@@ -72,24 +60,16 @@ function renderSensitiveData(value, type, id) {
     `;
 }
 
-/**
- * Toggle reveal untuk single data (butuh password jika belum unlock)
- */
 function toggleReveal(id, type, event) {
     if (event) event.stopPropagation();
     
     if (sensitiveDataUnlocked) {
-        // Sudah unlock - sembunyikan semua
         lockAllData();
     } else {
-        // Belum unlock - minta password
         openPasswordModal('unlock');
     }
 }
 
-/**
- * Buka modal password
- */
 function openPasswordModal(action) {
     const modal = document.getElementById('passwordModal');
     const input = document.getElementById('passwordInput');
@@ -97,7 +77,7 @@ function openPasswordModal(action) {
     const title = document.getElementById('passwordModalTitle');
     
     if (action === 'unlock') {
-        title.innerHTML = '<i data-lucide="shield-lock"></i> Verifikasi Keamanan';
+        title.innerHTML = '<i data-lucide="shield"></i> Verifikasi Keamanan';
     }
     
     input.value = '';
@@ -111,18 +91,12 @@ function openPasswordModal(action) {
     }, 100);
 }
 
-/**
- * Tutup modal password
- */
 function closePasswordModal(event) {
     if (event && event.target !== event.currentTarget) return;
     const modal = document.getElementById('passwordModal');
     modal.classList.remove('show');
 }
 
-/**
- * Toggle visibility password input
- */
 function togglePasswordVisibility() {
     const input = document.getElementById('passwordInput');
     const icon = document.getElementById('passwordEyeIcon');
@@ -137,50 +111,38 @@ function togglePasswordVisibility() {
     lucide.createIcons();
 }
 
-/**
- * Cek password
- */
 function checkPassword() {
     const input = document.getElementById('passwordInput');
     const error = document.getElementById('passwordError');
     const password = input.value;
     
     if (password === SENSITIVE_PASSWORD) {
-        // Password benar - unlock data
         sensitiveDataUnlocked = true;
         sessionStorage.setItem('sensitiveDataUnlocked', 'true');
         closePasswordModal();
         updateSecurityBar();
-        filterData(); // Re-render tabel
+        filterData();
         showToast('Data sensitif berhasil dibuka!', 'success');
     } else {
-        // Password salah
         error.style.display = 'flex';
         error.classList.add('show');
         input.value = '';
         input.focus();
         
-        // Shake animation
         setTimeout(() => {
             error.classList.remove('show');
         }, 2000);
     }
 }
 
-/**
- * Kunci ulang semua data
- */
 function lockAllData() {
     sensitiveDataUnlocked = false;
     sessionStorage.removeItem('sensitiveDataUnlocked');
     updateSecurityBar();
-    filterData(); // Re-render tabel
+    filterData();
     showToast('Data sensitif dikunci kembali', 'success');
 }
 
-/**
- * Update tampilan security bar
- */
 function updateSecurityBar() {
     const bar = document.getElementById('securityBar');
     const unlockBtn = document.getElementById('unlockBtn');
@@ -585,7 +547,6 @@ function filterData() {
 
     if (currentDataTab === 'sekolah') {
         headers = ['No', 'Jenjang', 'Nama Sekolah', 'Kepala Sekolah', 'NPSN', 'Alamat', 'Nama PIC', 'No. HP', 'SPP', 'Aksi'];
-        // 🔍 Pencarian terhadap data ASLI (bukan data yang di-mask)
         data = allSekolahData.filter(d => {
             const searchFields = [
                 d.nama_sekolah,
@@ -593,7 +554,7 @@ function filterData() {
                 d.npsn,
                 d.alamat_sekolah,
                 d.nama_pic,
-                d.nomor_hp,  // Search terhadap nomor_hp asli
+                d.nomor_hp,
                 d.jenjang,
                 String(d.spp_bulanan)
             ].map(f => String(f || '').toLowerCase());
@@ -603,10 +564,9 @@ function filterData() {
         renderFn = renderSekolahTable;
     } else if (currentDataTab === 'pm') {
         headers = ['No', 'Sekolah', 'NIK', 'NISN', 'Nama', 'Tempat Lahir', 'Tgl Lahir', 'JK', 'Orang Tua', 'Kelas', 'Aksi'];
-        // 🔍 Pencarian terhadap data ASLI (termasuk NIK asli)
         data = allPMData.filter(d => {
             const searchFields = [
-                d.nik,  // Search terhadap NIK asli
+                d.nik,
                 d.nisn,
                 d.nama_lengkap,
                 d.tempat_lahir,
@@ -624,7 +584,7 @@ function filterData() {
         headers = ['No', 'Sekolah', 'NIK', 'Nama', 'Tempat Lahir', 'Tgl Lahir', 'JK', 'Jabatan', 'Aksi'];
         data = allGuruData.filter(d => {
             const searchFields = [
-                d.nik,  // Search terhadap NIK asli
+                d.nik,
                 d.nama_lengkap,
                 d.tempat_lahir,
                 d.tanggal_lahir,
@@ -666,7 +626,6 @@ function renderTable(headers, data, renderFn) {
 }
 
 function renderSekolahTable(row, idx) {
-    // 🔒 Nomor HP disensor
     const nomorHP = renderSensitiveData(row.nomor_hp, 'phone', row.id);
     
     return `
@@ -691,10 +650,7 @@ function renderSekolahTable(row, idx) {
 
 function renderPMTable(row, idx) {
     const namaSekolah = row.sekolah?.nama_sekolah || '-';
-    // 🔒 NIK disensor
     const nik = renderSensitiveData(row.nik, 'nik', row.id);
-    
-    // Format tanggal lahir
     const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
     
     return `
@@ -720,9 +676,7 @@ function renderPMTable(row, idx) {
 
 function renderGuruTable(row, idx) {
     const namaSekolah = row.sekolah?.nama_sekolah || '-';
-    // 🔒 NIK disensor
     const nik = renderSensitiveData(row.nik, 'nik', row.id);
-    
     const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
     
     return `
@@ -744,9 +698,6 @@ function renderGuruTable(row, idx) {
     `;
 }
 
-/**
- * Format tanggal dari yyyy-mm-dd ke dd-mm-yyyy
- */
 function formatDate(dateStr) {
     if (!dateStr) return '-';
     const parts = String(dateStr).split('-');
@@ -794,7 +745,6 @@ async function deleteGuruData(id) {
 // ============================================
 
 function exportCurrentData() {
-    // 🔒 Jika data masih terkunci, minta password dulu sebelum export
     if (!sensitiveDataUnlocked) {
         showToast('Buka sensor data terlebih dahulu sebelum export!', 'error');
         openPasswordModal('unlock');
