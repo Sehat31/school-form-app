@@ -33,14 +33,11 @@ async function downloadMBGTemplate() {
     const headerRowPM = wsPM.addRow(headersPM);
     
     headerRowPM.eachCell((cell) => {
-        cell.fill = {
-            type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' }
-        };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
         cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
         cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
     });
-    
     headerRowPM.height = 30;
 
     const contohPM = [
@@ -78,14 +75,11 @@ async function downloadMBGTemplate() {
     const headerRowGuru = wsGuru.addRow(headersGuru);
 
     headerRowGuru.eachCell((cell) => {
-        cell.fill = {
-            type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10B981' }
-        };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10B981' } };
         cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
         cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
         cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
     });
-
     headerRowGuru.height = 30;
 
     const contohGuru = [
@@ -154,7 +148,7 @@ function handleDrop(event) {
 }
 
 /**
- * Process MBG Excel file dengan validasi NIK LENGKAP
+ * Process MBG Excel file dengan validasi NIK & Duplikasi
  */
 function processMBGFile(file) {
     const validExts = ['.xlsx', '.xls'];
@@ -183,14 +177,11 @@ function processMBGFile(file) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
-            console.log('Sheet names:', workbook.SheetNames);
-
             let pmSheetName = null;
             for (const name of workbook.SheetNames) {
                 const lower = name.toLowerCase();
                 if (lower.includes('pm') || lower.includes('penerima') || lower.includes('siswa')) {
-                    pmSheetName = name;
-                    break;
+                    pmSheetName = name; break;
                 }
             }
 
@@ -198,36 +189,35 @@ function processMBGFile(file) {
             for (const name of workbook.SheetNames) {
                 const lower = name.toLowerCase();
                 if (lower.includes('guru') || lower.includes('tendik')) {
-                    guruSheetName = name;
-                    break;
+                    guruSheetName = name; break;
                 }
             }
 
             let invalidNIKCount = 0;
             let invalidNIKList = [];
+            let allNIKs = [];
 
             // --- PARSE PM (SISWA) ---
             if (pmSheetName) {
                 const pmSheet = workbook.Sheets[pmSheetName];
                 const pmJson = XLSX.utils.sheet_to_json(pmSheet, { raw: false, dateNF: 'dd-mm-yyyy' });
                 
-                // VALIDASI NIK PM
                 pmJson.forEach((row, index) => {
-                    const nik = row['NIK (16 Digit)'] || row['NIK'] || '';
-                    const result = validateNIK(nik);
-                    if (!result.valid) {
-                        invalidNIKCount++;
-                        if (invalidNIKList.length < 10) {
-                            invalidNIKList.push(`Baris ${index + 2} (PM): NIK "${nik}" - ${result.message}`);
+                    const nik = String(row['NIK (16 Digit)'] || row['NIK'] || '').trim();
+                    if (nik) {
+                        allNIKs.push({ nik, sheet: 'PM', row: index + 2 });
+                        const result = validateNIK(nik);
+                        if (!result.valid) {
+                            invalidNIKCount++;
+                            if (invalidNIKList.length < 10) {
+                                invalidNIKList.push(`Baris ${index + 2} (PM): NIK "${nik}" - ${result.message}`);
+                            }
                         }
                     }
                 });
-                
                 parsedPMData = pmJson;
                 renderPMPreview(pmJson);
-                console.log('PM data:', pmJson.length, 'rows');
             } else {
-                console.warn('PM sheet not found');
                 parsedPMData = [];
             }
 
@@ -236,43 +226,85 @@ function processMBGFile(file) {
                 const guruSheet = workbook.Sheets[guruSheetName];
                 const guruJson = XLSX.utils.sheet_to_json(guruSheet, { raw: false, dateNF: 'dd-mm-yyyy' });
                 
-                // VALIDASI NIK GURU
                 guruJson.forEach((row, index) => {
-                    const nik = row['NIK (16 Digit)'] || row['NIK'] || '';
-                    const result = validateNIK(nik);
-                    if (!result.valid) {
-                        invalidNIKCount++;
-                        if (invalidNIKList.length < 10) {
-                            invalidNIKList.push(`Baris ${index + 2} (Guru): NIK "${nik}" - ${result.message}`);
+                    const nik = String(row['NIK (16 Digit)'] || row['NIK'] || '').trim();
+                    if (nik) {
+                        allNIKs.push({ nik, sheet: 'Guru', row: index + 2 });
+                        const result = validateNIK(nik);
+                        if (!result.valid) {
+                            invalidNIKCount++;
+                            if (invalidNIKList.length < 10) {
+                                invalidNIKList.push(`Baris ${index + 2} (Guru): NIK "${nik}" - ${result.message}`);
+                            }
                         }
                     }
                 });
-
                 parsedGuruData = guruJson;
                 renderGuruPreview(guruJson);
-                console.log('Guru data:', guruJson.length, 'rows');
             } else {
-                console.warn('Guru sheet not found');
                 parsedGuruData = [];
             }
 
+            // --- CEK NIK DUPLIKAT DALAM FILE ---
+            let duplicateNIKList = [];
+            const nikCount = {};
+            
+            allNIKs.forEach(item => {
+                nikCount[item.nik] = (nikCount[item.nik] || 0) + 1;
+            });
+
+            allNIKs.forEach(item => {
+                if (nikCount[item.nik] > 1) {
+                    const isDuplicate = duplicateNIKList.find(d => d.nik === item.nik);
+                    if (!isDuplicate) {
+                        duplicateNIKList.push({
+                            nik: item.nik,
+                            count: nikCount[item.nik],
+                            locations: allNIKs.filter(d => d.nik === item.nik).map(d => `${d.sheet} Baris ${d.row}`)
+                        });
+                    }
+                }
+            });
+
             // --- HASIL VALIDASI ---
-            if (invalidNIKCount > 0) {
-                let errorMsg = `⚠️ DITEMUKAN ${invalidNIKCount} NIK TIDAK VALID!\n\n`;
-                errorMsg += invalidNIKList.join('\n');
-                if (invalidNIKCount > 10) errorMsg += `\n...dan ${invalidNIKCount - 10} NIK lainnya.`;
-                errorMsg += `\n\nSilakan perbaiki file Excel dan upload ulang.`;
+            if (invalidNIKCount > 0 || duplicateNIKList.length > 0) {
+                let errorMsg = `⚠️ DITEMUKAN MASALAH PADA FILE!\n\n`;
+                
+                if (invalidNIKCount > 0) {
+                    errorMsg += `❌ ${invalidNIKCount} NIK TIDAK VALID (format salah):\n`;
+                    errorMsg += invalidNIKList.join('\n');
+                    errorMsg += '\n\n';
+                }
+                
+                if (duplicateNIKList.length > 0) {
+                    errorMsg += `❌ ${duplicateNIKList.length} NIK DUPLIKAT DALAM FILE:\n`;
+                    duplicateNIKList.forEach(dup => {
+                        errorMsg += `\n• NIK "${dup.nik}" muncul ${dup.count}x di:\n`;
+                        errorMsg += `  ${dup.locations.join('\n  ')}`;
+                    });
+                    errorMsg += '\n\n';
+                }
+                
+                errorMsg += `Silakan perbaiki file Excel dan upload ulang.`;
                 
                 showToast(errorMsg, 'error');
-                console.warn('NIK tidak valid:', invalidNIKList);
                 
-                // Tampilkan alert tambahan untuk memastikan user melihat
                 setTimeout(() => {
-                    alert(`⚠️ PERINGATAN!\n\nDitemukan ${invalidNIKCount} NIK tidak valid.\n\nSilakan perbaiki file Excel Anda sebelum melanjutkan upload.`);
+                    alert(`⚠️ PERINGATAN!\n\nDitemukan ${invalidNIKCount} NIK tidak valid dan ${duplicateNIKList.length} NIK duplikat.\n\nSilakan perbaiki file Excel Anda sebelum melanjutkan upload.`);
                 }, 500);
+                
+                // Reset data agar tidak bisa di-upload
+                parsedPMData = [];
+                parsedGuruData = [];
+                selectedFile = null;
+                return;
             } else {
                 const totalRows = parsedPMData.length + parsedGuruData.length;
-                showToast(`✅ File valid! ${parsedPMData.length} PM + ${parsedGuruData.length} Guru siap diupload.`, 'success');
+                if (totalRows === 0) {
+                    showToast('File tidak berisi data. Pastikan sheet bernama "PM" dan "Guru & Tendik"', 'error');
+                } else {
+                    showToast(`✅ File valid! ${parsedPMData.length} PM + ${parsedGuruData.length} Guru siap diupload.`, 'success');
+                }
             }
 
         } catch (err) {
@@ -381,9 +413,7 @@ function formatFileSize(bytes) {
 }
 
 /**
- * Validasi Format NIK Indonesia - LENGKAP DENGAN DETEKSI POLA ANEH
- * @param {string|number} nik - Nomor NIK yang akan divalidasi
- * @returns {object} - { valid: boolean, message: string, gender: string }
+ * Validasi Format NIK Indonesia - LENGKAP
  */
 function validateNIK(nik) {
     const str = String(nik).trim();
@@ -393,18 +423,18 @@ function validateNIK(nik) {
         return { valid: false, message: "Harus tepat 16 digit angka (bukan huruf/spasi)", gender: '-' };
     }
 
-    // 2. Tidak boleh semua digit sama (0000000000000000, 1111111111111111, dst)
+    // 2. Tidak boleh semua digit sama
     if (/^(.)\1{15}$/.test(str)) {
         return { valid: false, message: "Semua digit tidak boleh sama (contoh: 0000000000000000)", gender: '-' };
     }
 
-    // 3. Deteksi pola berulang (9090909090909090, 1212121212121212, dst)
+    // 3. Deteksi pola berulang (9090909090909090)
     const pola2Digit = str.substring(0, 2);
     if (str === pola2Digit.repeat(8)) {
         return { valid: false, message: `NIK pola berulang terdeteksi (${str}) - kemungkinan NIK palsu`, gender: '-' };
     }
 
-    // 4. Deteksi NIK berurutan (1234567890123456, 9876543210987654, dst)
+    // 4. Deteksi NIK berurutan
     if (/^1234567890123456$/.test(str) || /^9876543210987654$/.test(str)) {
         return { valid: false, message: "NIK berurutan terdeteksi - bukan NIK asli", gender: '-' };
     }
@@ -426,13 +456,13 @@ function validateNIK(nik) {
         return { valid: false, message: `Bulan tidak valid (${mm}) - harus 01-12`, gender: '-' };
     }
 
-    // 7. Validasi Tanggal (Cek apakah tanggal benar-benar ada)
+    // 7. Validasi Tanggal
     const date = new Date(1900 + yy, mm - 1, dd);
     if (date.getFullYear() % 100 !== yy || date.getMonth() + 1 !== mm || date.getDate() !== dd) {
         return { valid: false, message: `Tanggal lahir tidak valid (${dd}-${mm}-${yy})`, gender: '-' };
     }
 
-    // 8. Deteksi NIK dengan banyak angka 9 (9999999999999999 sudah dicek di step 2, tapi cek pola lain)
+    // 8. Deteksi NIK dengan banyak angka 9
     const count9 = (str.match(/9/g) || []).length;
     if (count9 >= 12) {
         return { valid: false, message: `NIK mengandung terlalu banyak angka 9 (${count9}x) - kemungkinan NIK palsu`, gender: '-' };
@@ -444,10 +474,5 @@ function validateNIK(nik) {
         return { valid: false, message: `NIK mengandung terlalu banyak angka 0 (${count0}x) - kemungkinan NIK palsu`, gender: '-' };
     }
 
-    // Jika lolos semua
-    return { 
-        valid: true, 
-        message: "Valid", 
-        gender: isFemale ? 'P' : 'L' 
-    };
+    return { valid: true, message: "Valid", gender: isFemale ? 'P' : 'L' };
 }
