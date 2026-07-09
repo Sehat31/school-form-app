@@ -334,4 +334,52 @@ function formatFileSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    /**
+ * Validasi Format NIK Indonesia
+ * @param {string|number} nik - Nomor NIK yang akan divalidasi
+ * @returns {object} - { valid: boolean, message: string, gender: string }
+ */
+function validateNIK(nik) {
+    const str = String(nik).trim();
+
+    // 1. Harus tepat 16 digit angka
+    if (!/^\d{16}$/.test(str)) {
+        return { valid: false, message: "Harus 16 digit angka", gender: '-' };
+    }
+
+    // 2. Tidak boleh semua digit sama (000... atau 111... dst)
+    if (/^(.)\1{15}$/.test(str)) {
+        return { valid: false, message: "Digit tidak boleh sama semua", gender: '-' };
+    }
+
+    // 3. Ekstrak Tanggal Lahir (Digit ke-7 sampai 12: DD MM YY)
+    let dd = parseInt(str.substring(6, 8));
+    const mm = parseInt(str.substring(8, 10));
+    const yy = parseInt(str.substring(10, 12));
+
+    // Aturan NIK Perempuan: Tanggal lahir + 40
+    let isFemale = false;
+    if (dd > 40) {
+        dd -= 40;
+        isFemale = true;
+    }
+
+    // 4. Validasi Bulan (1-12)
+    if (mm < 1 || mm > 12) {
+        return { valid: false, message: "Bulan tidak valid", gender: '-' };
+    }
+
+    // 5. Validasi Tanggal (Cek apakah tanggal benar-benar ada)
+    const date = new Date(1900 + yy, mm - 1, dd);
+    if (date.getFullYear() % 100 !== yy || date.getMonth() + 1 !== mm || date.getDate() !== dd) {
+        return { valid: false, message: "Tanggal lahir tidak valid", gender: '-' };
+    }
+
+    // Jika lolos semua
+    return { 
+        valid: true, 
+        message: "Valid", 
+        gender: isFemale ? 'P' : 'L' 
+    };
+}
 }
