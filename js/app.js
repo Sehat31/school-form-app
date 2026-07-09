@@ -310,42 +310,64 @@ async function loadSchoolDropdown() {
 }
 
 async function loadSchoolInfo() {
+    console.log('loadSchoolInfo dipanggil...');
+    
     const select = document.getElementById('select_npsn_mbg');
-    if (!select) return;
+    const infoDisplay = document.getElementById('schoolInfoDisplay');
+    
+    if (!select) {
+        console.error('Dropdown sekolah tidak ditemukan di HTML!');
+        return;
+    }
 
-    const selectedOption = select.options[select.selectedIndex];
     const npsn = select.value;
 
+    // Jika tidak ada NPSN yang dipilih, sembunyikan info
     if (!npsn) {
-        const infoDisplay = document.getElementById('schoolInfoDisplay');
+        if (infoDisplay) infoDisplay.style.display = 'none';
+        return;
+    }
+
+    // Cek apakah database client (db) sudah siap
+    if (typeof db === 'undefined') {
+        console.error('Database client (db) belum terinisialisasi! Cek file supabaseClient.js.');
         if (infoDisplay) infoDisplay.style.display = 'none';
         return;
     }
 
     try {
+        console.log('Mengambil data sekolah untuk NPSN:', npsn);
+        
         const { data: school, error } = await db
             .from('sekolah')
             .select('*')
             .eq('npsn', npsn)
             .single();
 
-        const infoDisplay = document.getElementById('schoolInfoDisplay');
-        if (!infoDisplay) return;
-
-        if (error || !school) {
-            console.error('Gagal load data sekolah:', error);
-            document.getElementById('infoNamaSekolah').textContent = selectedOption.textContent.split(' - ')[1] || '-';
-            document.getElementById('infoJenjang').textContent = '-';
-            document.getElementById('infoKepsek').textContent = '-';
-        } else {
-            document.getElementById('infoNamaSekolah').textContent = school.nama_sekolah || '-';
-            document.getElementById('infoJenjang').textContent = school.jenjang || '-';
-            document.getElementById('infoKepsek').textContent = school.nama_kepsek || '-';
+        if (error) {
+            console.warn('Supabase mengembalikan error:', error.message);
         }
 
-        infoDisplay.style.display = 'block';
+        if (infoDisplay) {
+            if (school) {
+                // Data ditemukan di database
+                document.getElementById('infoNamaSekolah').textContent = school.nama_sekolah || '-';
+                document.getElementById('infoJenjang').textContent = school.jenjang || '-';
+                document.getElementById('infoKepsek').textContent = school.nama_kepsek || '-';
+            } else {
+                // Data tidak ditemukan di database, ambil dari teks dropdown
+                const selectedOption = select.options[select.selectedIndex];
+                const namaDariDropdown = selectedOption ? selectedOption.textContent.split(' - ')[1] : '-';
+                
+                document.getElementById('infoNamaSekolah').textContent = namaDariDropdown;
+                document.getElementById('infoJenjang').textContent = '-';
+                document.getElementById('infoKepsek').textContent = '-';
+            }
+            infoDisplay.style.display = 'block';
+        }
     } catch (err) {
-        console.error('Error load school info:', err);
+        console.error('Gagal memuat info sekolah:', err);
+        if (infoDisplay) infoDisplay.style.display = 'none';
     }
 }
 
