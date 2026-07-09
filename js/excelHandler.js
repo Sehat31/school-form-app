@@ -7,141 +7,137 @@ let parsedPMData = [];
 let parsedGuruData = [];
 
 /**
- * Download Template MBG Excel dengan Format Warna
+ * Download Template MBG Excel dengan Format Warna (Menggunakan ExcelJS)
  */
-function downloadMBGTemplate() {
-    // Sheet 1: PM (Penerima Manfaat)
-    const pmHeaders = [
-        'NIK (16 Digit)', 
-        'NISN (10 Digit)', 
-        'NAMA LENGKAP (Sesuai Akta/KTP)', 
-        'TEMPAT LAHIR (Kota/Kabupaten)', 
-        'TANGGAL LAHIR (dd-mm-yyyy)', 
-        'JENIS KELAMIN (L/P)', 
-        'NAMA ORANG TUA/WALI (Ayah/Ibu/Wali)', 
-        'KELAS (Contoh: 1,7,10)', 
-        'KETERANGAN (Opsional)'
-    ];
-    
-    // Data contoh (akan dihapus oleh user)
-    const pmExample = [
-        ['3201010101010001', '0012345678', 'Ahmad Fauzi', 'Jakarta', '01-01-2015', 'L', 'Budi Santoso', '1', '-'],
-        ['3201010101010002', '0012345679', 'Siti Nurhaliza', 'Bandung', '15-03-2014', 'P', 'Ahmad Dahlan', '2', '-'],
-    ];
+async function downloadMBGTemplate() {
+    showToast('Sedang membuat template...', 'success');
 
-    // Sheet 2: Guru & Tendik
-    const guruHeaders = [
-        'NIK (16 Digit)', 
-        'NAMA LENGKAP (Sesuai KTP)', 
-        'TEMPAT LAHIR (Kota/Kabupaten)', 
-        'TANGGAL LAHIR (dd-mm-yyyy)', 
-        'JENIS KELAMIN (L/P)', 
-        'JABATAN (Guru/Tendik)', 
-        'KETERANGAN (Opsional)'
-    ];
-    
-    const guruExample = [
-        ['3201010101010003', 'Drs. H. Ahmad Dahlan, M.Pd', 'Surabaya', '10-05-1975', 'L', 'Kepala Sekolah', '-'],
-        ['3201010101010004', 'Siti Aminah, M.Pd', 'Bandung', '15-08-1985', 'P', 'Guru', '-'],
-    ];
-
-    const wb = XLSX.utils.book_new();
+    // Inisialisasi Workbook ExcelJS
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Portal SPP Gjatian';
+    workbook.created = new Date();
 
     // ============================================
     // SHEET 1: PM (Penerima Manfaat) - HEADER BIRU
     // ============================================
-    const pmData = [pmHeaders, ...pmExample];
-    const pmWs = XLSX.utils.aoa_to_sheet(pmData);
-    
-    // Set column widths
-    pmWs['!cols'] = [
-        { wch: 18 }, // NIK
-        { wch: 14 }, // NISN
-        { wch: 30 }, // Nama Lengkap
-        { wch: 18 }, // Tempat Lahir
-        { wch: 16 }, // Tanggal Lahir
-        { wch: 14 }, // Jenis Kelamin
-        { wch: 25 }, // Nama Orang Tua
-        { wch: 10 }, // Kelas
-        { wch: 15 }  // Keterangan
+    const wsPM = workbook.addWorksheet('PM (Penerima Manfaat)', {
+        properties: { tabColor: { argb: 'FF2563EB' } }
+    });
+
+    // Header PM
+    const headersPM = [
+        'NIK (16 Digit)', 'NISN (10 Digit)', 'NAMA LENGKAP (Sesuai Akta/KTP)', 
+        'TEMPAT LAHIR (Kota/Kabupaten)', 'TANGGAL LAHIR (dd-mm-yyyy)', 
+        'JENIS KELAMIN (L/P)', 'NAMA ORANG TUA/WALI (Ayah/Ibu/Wali)', 
+        'KELAS (Contoh: 1,7,10)', 'KETERANGAN (Opsional)'
     ];
     
-    // Format Header (Baris 1) - BIRU
-    const pmHeaderRange = XLSX.utils.decode_range(pmWs['!ref']);
-    for (let col = pmHeaderRange.s.c; col <= pmHeaderRange.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-        if (pmWs[cellAddress]) {
-            pmWs[cellAddress].s = {
-                fill: { fgColor: { rgb: "2563EB" } }, // Biru
-                font: { bold: true, color: { rgb: "FFFFFF" } }, // Putih & Bold
-                alignment: { horizontal: "center", vertical: "center", wrapText: true }
-            };
-        }
-    }
+    // Tambah Header
+    const headerRowPM = wsPM.addRow(headersPM);
     
-    // Format Data Contoh (Baris 2-3) - MERAH & MIRING
-    for (let row = 1; row <= 2; row++) {
-        for (let col = pmHeaderRange.s.c; col <= pmHeaderRange.e.c; col++) {
-            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-            if (pmWs[cellAddress]) {
-                pmWs[cellAddress].s = {
-                    font: { italic: true, color: { rgb: "DC2626" } }, // Merah & Miring
-                    alignment: { vertical: "center" }
-                };
-            }
-        }
-    }
+    // Style Header PM (BIRU)
+    headerRowPM.eachCell((cell) => {
+        cell.fill = {
+            type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } // Biru
+        };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 }; // Putih & Bold
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+    });
     
-    XLSX.utils.book_append_sheet(wb, pmWs, 'PM (Penerima Manfaat)');
+    // Tinggi baris header
+    headerRowPM.height = 30;
+
+    // Data Contoh PM (MERAH & MIRING)
+    const contohPM = [
+        ['3201010101010001', '0012345678', 'Ahmad Fauzi', 'Jakarta', '01-01-2015', 'L', 'Budi Santoso', '1', 'Hapus baris ini'],
+        ['3201010101010002', '0012345679', 'Siti Nurhaliza', 'Bandung', '15-03-2014', 'P', 'Ahmad Dahlan', '2', 'Hapus baris ini'],
+    ];
+
+    contohPM.forEach(data => {
+        const row = wsPM.addRow(data);
+        row.eachCell((cell) => {
+            cell.font = { italic: true, color: { argb: 'FFDC2626' }, size: 11 }; // Merah & Miring
+            cell.alignment = { vertical: 'middle' };
+            cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+        });
+    });
+
+    // Lebar Kolom PM
+    wsPM.columns = [
+        { width: 20 }, { width: 15 }, { width: 30 }, { width: 20 }, 
+        { width: 18 }, { width: 15 }, { width: 25 }, { width: 12 }, { width: 20 }
+    ];
+
 
     // ============================================
     // SHEET 2: Guru & Tendik - HEADER HIJAU
     // ============================================
-    const guruData = [guruHeaders, ...guruExample];
-    const guruWs = XLSX.utils.aoa_to_sheet(guruData);
-    
-    // Set column widths
-    guruWs['!cols'] = [
-        { wch: 18 }, // NIK
-        { wch: 35 }, // Nama Lengkap
-        { wch: 18 }, // Tempat Lahir
-        { wch: 16 }, // Tanggal Lahir
-        { wch: 14 }, // Jenis Kelamin
-        { wch: 20 }, // Jabatan
-        { wch: 15 }  // Keterangan
-    ];
-    
-    // Format Header (Baris 1) - HIJAU
-    const guruHeaderRange = XLSX.utils.decode_range(guruWs['!ref']);
-    for (let col = guruHeaderRange.s.c; col <= guruHeaderRange.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-        if (guruWs[cellAddress]) {
-            guruWs[cellAddress].s = {
-                fill: { fgColor: { rgb: "10B981" } }, // Hijau
-                font: { bold: true, color: { rgb: "FFFFFF" } }, // Putih & Bold
-                alignment: { horizontal: "center", vertical: "center", wrapText: true }
-            };
-        }
-    }
-    
-    // Format Data Contoh (Baris 2-3) - MERAH & MIRING
-    for (let row = 1; row <= 2; row++) {
-        for (let col = guruHeaderRange.s.c; col <= guruHeaderRange.e.c; col++) {
-            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-            if (guruWs[cellAddress]) {
-                guruWs[cellAddress].s = {
-                    font: { italic: true, color: { rgb: "DC2626" } }, // Merah & Miring
-                    alignment: { vertical: "center" }
-                };
-            }
-        }
-    }
-    
-    XLSX.utils.book_append_sheet(wb, guruWs, 'Guru & Tendik');
+    const wsGuru = workbook.addWorksheet('Guru & Tendik', {
+        properties: { tabColor: { argb: 'FF10B981' } }
+    });
 
-    // Download file
-    XLSX.writeFile(wb, 'Template_Data_MBG.xlsx');
-    showToast('Template MBG berhasil diunduh!', 'success');
+    // Header Guru
+    const headersGuru = [
+        'NIK (16 Digit)', 'NAMA LENGKAP (Sesuai KTP)', 'TEMPAT LAHIR (Kota/Kabupaten)', 
+        'TANGGAL LAHIR (dd-mm-yyyy)', 'JENIS KELAMIN (L/P)', 'JABATAN (Guru/Tendik)', 
+        'KETERANGAN (Opsional)'
+    ];
+
+    // Tambah Header
+    const headerRowGuru = wsGuru.addRow(headersGuru);
+
+    // Style Header Guru (HIJAU)
+    headerRowGuru.eachCell((cell) => {
+        cell.fill = {
+            type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10B981' } // Hijau
+        };
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 }; // Putih & Bold
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+    });
+
+    // Tinggi baris header
+    headerRowGuru.height = 30;
+
+    // Data Contoh Guru (MERAH & MIRING)
+    const contohGuru = [
+        ['3201010101010003', 'Drs. H. Ahmad Dahlan, M.Pd', 'Surabaya', '10-05-1975', 'L', 'Kepala Sekolah', 'Hapus baris ini'],
+        ['3201010101010004', 'Siti Aminah, M.Pd', 'Bandung', '15-08-1985', 'P', 'Guru', 'Hapus baris ini'],
+    ];
+
+    contohGuru.forEach(data => {
+        const row = wsGuru.addRow(data);
+        row.eachCell((cell) => {
+            cell.font = { italic: true, color: { argb: 'FFDC2626' }, size: 11 }; // Merah & Miring
+            cell.alignment = { vertical: 'middle' };
+            cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+        });
+    });
+
+    // Lebar Kolom Guru
+    wsGuru.columns = [
+        { width: 20 }, { width: 35 }, { width: 20 }, { width: 18 }, 
+        { width: 15 }, { width: 20 }, { width: 20 }
+    ];
+
+    // ============================================
+    // PROSES DOWNLOAD
+    // ============================================
+    try {
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Template_Data_MBG.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+        showToast('Template Berwarna berhasil diunduh!', 'success');
+    } catch (error) {
+        console.error(error);
+        showToast('Gagal membuat template', 'error');
+    }
 }
 
 /**
