@@ -3,28 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="favicon.png">
-    
-    <title>Form Data Sekolah</title>
+    <title>Portal SPP Gjatian - Data Sekolah & MBG</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
-    <!-- ============ HEADER ============ -->
+    <!-- HEADER -->
     <header class="header">
         <div class="header-content">
             <div class="logo">
                 <i data-lucide="school" class="logo-icon"></i>
-                <h1>Data Sekolah</h1>
+                <h1>Portal SPP Gjatian</h1>
             </div>
             <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
                 <i data-lucide="menu"></i>
@@ -32,33 +24,21 @@
         </div>
     </header>
 
-    <!-- ============ NAVIGATION ============ -->
+    <!-- NAVIGATION -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <ul class="nav-menu">
+            <ul class="nav-menu" id="navMenu">
                 <li class="nav-item">
-                    <a href="#" class="nav-link active" data-page="form" onclick="showPage('form')">
-                        <i data-lucide="file-text"></i>
-                        Form Pengisian
+                    <a href="#" class="nav-link active" data-page="sekolah" onclick="showPage('sekolah')">
+                        <i data-lucide="school"></i>
+                        Data Sekolah
                     </a>
                 </li>
-                <li class="nav-item has-dropdown">
-                    <a href="#" class="nav-link" data-page="upload" onclick="showPage('upload')">
-                        <i data-lucide="upload-cloud"></i>
-                        Upload Excel
-                        <i data-lucide="chevron-down" class="dropdown-arrow"></i>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="mbg" onclick="showPage('mbg')">
+                        <i data-lucide="utensils"></i>
+                        Data MBG
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="#" onclick="showPage('upload'); scrollToSection('template-section')">
-                            <i data-lucide="download"></i> Unduh Template
-                        </a></li>
-                        <li><a href="#" onclick="showPage('upload'); scrollToSection('upload-section')">
-                            <i data-lucide="upload"></i> Upload File
-                        </a></li>
-                        <li><a href="#" onclick="showPage('upload'); scrollToSection('files-section')">
-                            <i data-lucide="folder-open"></i> File Tersimpan
-                        </a></li>
-                    </ul>
                 </li>
                 <li class="nav-item">
                     <a href="#" class="nav-link" data-page="data" onclick="showPage('data')">
@@ -76,14 +56,14 @@
         </div>
     </nav>
 
-    <!-- ============ MAIN CONTENT ============ -->
+    <!-- MAIN CONTENT -->
     <main class="main-content">
 
-        <!-- ======== PAGE: FORM PENGISIAN ======== -->
-        <section id="page-form" class="page active">
+        <!-- PAGE 1: DATA SEKOLAH -->
+        <section id="page-sekolah" class="page active">
             <div class="page-header">
-                <h2><i data-lucide="file-text"></i> Form Pengisian Data Sekolah</h2>
-                <p>Silakan isi data sekolah dengan lengkap dan benar</p>
+                <h2><i data-lucide="school"></i> Step 1: Data Sekolah</h2>
+                <p>Isi data sekolah terlebih dahulu sebelum upload Data MBG</p>
             </div>
 
             <!-- Contoh Pengisian -->
@@ -97,38 +77,18 @@
                         <thead>
                             <tr>
                                 <th>Field</th>
-                                <th>Contoh Pengisian</th>
+                                <th>Contoh</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Jenjang</td>
-                                <td><code>SD / SMP / SMA / SMK</code></td>
-                            </tr>
-                            <tr>
-                                <td>Nama Sekolah</td>
-                                <td><code>SDN 1 Menteng</code></td>
-                            </tr>
-                            <tr>
-                                <td>NPSN</td>
-                                <td><code>20100123</code> (8 digit angka)</td>
-                            </tr>
-                            <tr>
-                                <td>Alamat Sekolah</td>
-                                <td><code>Jl. Menteng Raya No. 10, Jakarta Pusat 10310</code></td>
-                            </tr>
-                            <tr>
-                                <td>Nama PIC</td>
-                                <td><code>Budi Santoso, S.Pd</code></td>
-                            </tr>
-                            <tr>
-                                <td>Nomor HP PIC</td>
-                                <td><code>081234567890</code></td>
-                            </tr>
-                            <tr>
-                                <td>SPP Bulanan</td>
-                                <td><code>500000</code> (angka saja, tanpa Rp/titik)</td>
-                            </tr>
+                            <tr><td>Jenjang</td><td><code>SD / SMP / SMA / SMK</code></td></tr>
+                            <tr><td>Nama Sekolah</td><td><code>SDN 1 Menteng</code></td></tr>
+                            <tr><td>Nama Kepala Sekolah</td><td><code>Drs. H. Ahmad Dahlan, M.Pd</code></td></tr>
+                            <tr><td>NPSN</td><td><code>20100123</code> (8 digit)</td></tr>
+                            <tr><td>Alamat Sekolah</td><td><code>Jl. Menteng Raya No. 10, Jakarta Pusat</code></td></tr>
+                            <tr><td>Nama PIC</td><td><code>Budi Santoso, S.Pd</code></td></tr>
+                            <tr><td>Nomor HP PIC</td><td><code>081234567890</code></td></tr>
+                            <tr><td>SPP Bulanan</td><td><code>500000</code> (angka saja)</td></tr>
                         </tbody>
                     </table>
                     <button class="btn btn-outline btn-sm" onclick="fillExample()">
@@ -137,11 +97,10 @@
                 </div>
             </div>
 
-            <!-- Form -->
+            <!-- Form Data Sekolah -->
             <div class="card">
                 <form id="schoolForm" onsubmit="handleSubmit(event)">
                     <div class="form-grid">
-                        <!-- Jenjang -->
                         <div class="form-group">
                             <label for="jenjang">
                                 <i data-lucide="layers"></i> Jenjang <span class="required">*</span>
@@ -156,7 +115,6 @@
                             </select>
                         </div>
 
-                        <!-- Nama Sekolah -->
                         <div class="form-group">
                             <label for="nama_sekolah">
                                 <i data-lucide="building"></i> Nama Sekolah <span class="required">*</span>
@@ -164,8 +122,7 @@
                             <input type="text" id="nama_sekolah" name="nama_sekolah" 
                                    placeholder="cth: SDN 1 Menteng" required>
                         </div>
-                        
-                        <!-- Nama Kepala Sekolah (BARU) -->
+
                         <div class="form-group">
                             <label for="nama_kepsek">
                                 <i data-lucide="user-check"></i> Nama Kepala Sekolah <span class="required">*</span>
@@ -174,7 +131,6 @@
                                    placeholder="cth: Drs. H. Ahmad Dahlan, M.Pd" required>
                         </div>
 
-                        <!-- NPSN -->
                         <div class="form-group">
                             <label for="npsn">
                                 <i data-lucide="hash"></i> NPSN <span class="required">*</span>
@@ -184,7 +140,6 @@
                                    pattern="[0-9]{8}" title="NPSN harus 8 digit angka" required>
                         </div>
 
-                        <!-- Alamat Sekolah -->
                         <div class="form-group full-width">
                             <label for="alamat_sekolah">
                                 <i data-lucide="map-pin"></i> Alamat Sekolah <span class="required">*</span>
@@ -193,7 +148,6 @@
                                       placeholder="cth: Jl. Menteng Raya No. 10, Jakarta Pusat 10310" required></textarea>
                         </div>
 
-                        <!-- Nama PIC -->
                         <div class="form-group">
                             <label for="nama_pic">
                                 <i data-lucide="user"></i> Nama PIC <span class="required">*</span>
@@ -202,17 +156,15 @@
                                    placeholder="cth: Budi Santoso, S.Pd" required>
                         </div>
 
-                        <!-- Nomor HP PIC -->
                         <div class="form-group">
                             <label for="nomor_hp">
                                 <i data-lucide="phone"></i> Nomor HP PIC <span class="required">*</span>
                             </label>
                             <input type="tel" id="nomor_hp" name="nomor_hp" 
                                    placeholder="cth: 081234567890" 
-                                   pattern="[0-9]{10,15}" title="Nomor HP 10-15 digit angka" required>
+                                   pattern="[0-9]{10,15}" required>
                         </div>
 
-                        <!-- SPP Bulanan -->
                         <div class="form-group">
                             <label for="spp_bulanan">
                                 <i data-lucide="wallet"></i> SPP Bulanan (Rp) <span class="required">*</span>
@@ -231,79 +183,121 @@
                             <i data-lucide="rotate-ccw"></i> Reset
                         </button>
                         <button type="submit" class="btn btn-primary" id="submitBtn">
-                            <i data-lucide="save"></i> Simpan Data
+                            <i data-lucide="save"></i> Simpan & Lanjutkan ke MBG
                         </button>
                     </div>
                 </form>
             </div>
         </section>
 
-        <!-- ======== PAGE: UPLOAD EXCEL ======== -->
-        <section id="page-upload" class="page">
+        <!-- PAGE 2: DATA MBG -->
+        <section id="page-mbg" class="page">
             <div class="page-header">
-                <h2><i data-lucide="upload-cloud"></i> Upload File Excel</h2>
-                <p>Unduh template, isi, lalu upload kembali</p>
+                <h2><i data-lucide="utensils"></i> Step 2: Upload Data MBG</h2>
+                <p>Upload file Excel berisi data Penerima Manfaat (Siswa) dan Guru & Tendik</p>
             </div>
 
-            <!-- Template Download -->
+            <!-- Pilih Sekolah -->
+            <div class="card" id="select-school-section">
+                <div class="section-title">
+                    <i data-lucide="school"></i>
+                    <h3>Pilih Sekolah</h3>
+                </div>
+                <p class="section-desc">Pilih sekolah yang akan diupload data MBG-nya</p>
+                <div class="form-group">
+                    <label for="select_npsn_mbg">
+                        <i data-lucide="hash"></i> NPSN Sekolah <span class="required">*</span>
+                    </label>
+                    <select id="select_npsn_mbg" required onchange="loadSchoolInfo()">
+                        <option value="">-- Pilih Sekolah --</option>
+                    </select>
+                </div>
+                <div id="schoolInfoDisplay" class="school-info" style="display:none;">
+                    <p><strong>Nama Sekolah:</strong> <span id="infoNamaSekolah"></span></p>
+                    <p><strong>Jenjang:</strong> <span id="infoJenjang"></span></p>
+                    <p><strong>Kepala Sekolah:</strong> <span id="infoKepsek"></span></p>
+                </div>
+            </div>
+
+            <!-- Download Template -->
             <div class="card" id="template-section">
                 <div class="section-title">
                     <i data-lucide="download"></i>
-                    <h3>Unduh Template Excel</h3>
+                    <h3>Unduh Template Excel MBG</h3>
                 </div>
                 <p class="section-desc">
-                    Unduh file template Excel di bawah ini, lalu isi sesuai dengan data sekolah Anda. 
-                    Pastikan format sesuai agar proses upload berjalan lancar.
+                    Template memiliki 2 sheet: <strong>PM (Penerima Manfaat)</strong> untuk data siswa, 
+                    dan <strong>Guru & Tendik</strong> untuk data guru dan tenaga kependidikan.
                 </p>
                 <div class="template-preview">
+                    <h4>Sheet 1: PM (Penerima Manfaat)</h4>
                     <table class="preview-table">
                         <thead>
                             <tr>
-                                <th>Jenjang</th>
-                                <th>Nama Sekolah</th>
-                                <th>NPSN</th>
-                                <th>Alamat Sekolah</th>
-                                <th>Nama PIC</th>
-                                <th>Nomor HP PIC</th>
-                                <th>SPP Bulanan</th>
+                                <th>NIK (16 Digit)</th>
+                                <th>NISN (10 Digit)</th>
+                                <th>Nama Lengkap</th>
+                                <th>Tempat Lahir</th>
+                                <th>Tanggal Lahir</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Nama Orang Tua/Wali</th>
+                                <th>Kelas</th>
+                                <th>Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>SD</td>
-                                <td>SDN 1 Menteng</td>
-                                <td>20100123</td>
-                                <td>Jl. Menteng Raya No. 10, Jakarta Pusat</td>
+                                <td>3201010101010001</td>
+                                <td>0012345678</td>
+                                <td>Ahmad Fauzi</td>
+                                <td>Jakarta</td>
+                                <td>01-01-2015</td>
+                                <td>L</td>
                                 <td>Budi Santoso</td>
-                                <td>081234567890</td>
-                                <td>500000</td>
+                                <td>1</td>
+                                <td>-</td>
                             </tr>
-                            <tr class="example-row">
-                                <td>SMP</td>
-                                <td>SMPN 5 Bandung</td>
-                                <td>20201234</td>
-                                <td>Jl. Belitung No. 8, Bandung</td>
-                                <td>Siti Aminah</td>
-                                <td>089876543210</td>
-                                <td>750000</td>
+                        </tbody>
+                    </table>
+                    <h4 style="margin-top:20px;">Sheet 2: Guru & Tendik</h4>
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>NIK (16 Digit)</th>
+                                <th>Nama Lengkap</th>
+                                <th>Tempat Lahir</th>
+                                <th>Tanggal Lahir</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Jabatan</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>3201010101010002</td>
+                                <td>Siti Aminah, M.Pd</td>
+                                <td>Bandung</td>
+                                <td>15-05-1985</td>
+                                <td>P</td>
+                                <td>Guru</td>
+                                <td>-</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <button class="btn btn-primary" onclick="downloadTemplate()">
-                    <i data-lucide="download"></i> Unduh Template (.xlsx)
+                <button class="btn btn-primary" onclick="downloadMBGTemplate()">
+                    <i data-lucide="download"></i> Unduh Template MBG (.xlsx)
                 </button>
             </div>
 
-            <!-- Upload Section -->
+            <!-- Upload File -->
             <div class="card" id="upload-section">
                 <div class="section-title">
                     <i data-lucide="upload"></i>
                     <h3>Upload File Excel</h3>
                 </div>
-                <p class="section-desc">
-                    Pilih file Excel (.xlsx / .xls) yang sudah diisi, lalu klik upload.
-                </p>
+                <p class="section-desc">Pilih file Excel yang sudah diisi, lalu upload</p>
+                
                 <div class="upload-zone" id="uploadZone" 
                      ondrop="handleDrop(event)" 
                      ondragover="handleDragOver(event)" 
@@ -331,10 +325,23 @@
                             <i data-lucide="x"></i>
                         </button>
                     </div>
-                    <!-- Excel Data Preview -->
-                    <div id="excelPreviewTable" class="excel-preview"></div>
+                    
+                    <!-- Preview PM -->
+                    <div id="pmPreview" class="excel-preview" style="display:none;">
+                        <h4>📋 Preview: Penerima Manfaat (Siswa)</h4>
+                        <div id="pmPreviewTable"></div>
+                        <p class="preview-count">Total: <span id="pmCount">0</span> siswa</p>
+                    </div>
+                    
+                    <!-- Preview Guru -->
+                    <div id="guruPreview" class="excel-preview" style="display:none;">
+                        <h4>👨‍🏫 Preview: Guru & Tendik</h4>
+                        <div id="guruPreviewTable"></div>
+                        <p class="preview-count">Total: <span id="guruCount">0</span> orang</p>
+                    </div>
+                    
                     <div class="form-actions">
-                        <button class="btn btn-primary" onclick="uploadFile()" id="uploadBtn">
+                        <button class="btn btn-primary" onclick="uploadMBGFile()" id="uploadBtn">
                             <i data-lucide="cloud-upload"></i> Upload & Simpan ke Database
                         </button>
                     </div>
@@ -359,15 +366,28 @@
             </div>
         </section>
 
-        <!-- ======== PAGE: DATA TERSIMPAN ======== -->
+        <!-- PAGE 3: DATA TERSIMPAN -->
         <section id="page-data" class="page">
             <div class="page-header">
-                <h2><i data-lucide="database"></i> Data Sekolah Tersimpan</h2>
-                <p>Seluruh data yang telah diinput melalui form maupun upload Excel</p>
+                <h2><i data-lucide="database"></i> Data Tersimpan</h2>
+                <p>Lihat semua data sekolah dan MBG yang sudah tersimpan</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="data-tabs">
+                <button class="tab-btn active" onclick="showDataTab('sekolah')">
+                    <i data-lucide="school"></i> Data Sekolah
+                </button>
+                <button class="tab-btn" onclick="showDataTab('pm')">
+                    <i data-lucide="users"></i> Penerima Manfaat
+                </button>
+                <button class="tab-btn" onclick="showDataTab('guru')">
+                    <i data-lucide="user-check"></i> Guru & Tendik
+                </button>
             </div>
 
             <!-- Stats -->
-            <div class="stats-grid">
+            <div class="stats-grid" id="statsGrid">
                 <div class="stat-card">
                     <i data-lucide="school"></i>
                     <div>
@@ -376,17 +396,17 @@
                     </div>
                 </div>
                 <div class="stat-card">
-                    <i data-lucide="layers"></i>
+                    <i data-lucide="users"></i>
                     <div>
-                        <p class="stat-number" id="totalJenjang">0</p>
-                        <p class="stat-label">Jenjang</p>
+                        <p class="stat-number" id="totalPM">0</p>
+                        <p class="stat-label">Total Penerima Manfaat</p>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <i data-lucide="wallet"></i>
+                    <i data-lucide="user-check"></i>
                     <div>
-                        <p class="stat-number" id="avgSPP">Rp 0</p>
-                        <p class="stat-label">Rata-rata SPP</p>
+                        <p class="stat-number" id="totalGuru">0</p>
+                        <p class="stat-label">Total Guru & Tendik</p>
                     </div>
                 </div>
             </div>
@@ -396,41 +416,19 @@
                 <div class="filter-bar">
                     <div class="search-box">
                         <i data-lucide="search"></i>
-                        <input type="text" id="searchInput" placeholder="Cari nama sekolah, NPSN, PIC..." 
-                               oninput="filterData()">
+                        <input type="text" id="searchInput" placeholder="Cari data..." oninput="filterData()">
                     </div>
-                    <select id="filterJenjang" onchange="filterData()">
-                        <option value="">Semua Jenjang</option>
-                        <option value="TK">TK</option>
-                        <option value="SD">SD</option>
-                        <option value="SMP">SMP</option>
-                        <option value="SMA">SMA</option>
-                        <option value="SMK">SMK</option>
-                    </select>
-                    <button class="btn btn-outline btn-sm" onclick="loadData()">
+                    <button class="btn btn-outline btn-sm" onclick="loadAllData()">
                         <i data-lucide="refresh-cw"></i> Refresh
                     </button>
-                    <button class="btn btn-outline btn-sm" onclick="exportData()">
+                    <button class="btn btn-outline btn-sm" onclick="exportCurrentData()">
                         <i data-lucide="download"></i> Export
                     </button>
                 </div>
 
-                <!-- Data Table -->
                 <div class="table-responsive">
                     <table class="data-table" id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Jenjang</th>
-                                <th>Nama Sekolah</th>
-                                <th>NPSN</th>
-                                <th>Alamat</th>
-                                <th>Nama PIC</th>
-                                <th>No. HP PIC</th>
-                                <th>SPP Bulanan</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
+                        <thead id="dataTableHead"></thead>
                         <tbody id="dataTableBody">
                             <tr>
                                 <td colspan="9" class="empty-state">
@@ -444,77 +442,55 @@
             </div>
         </section>
 
-        <!-- ======== PAGE: TUTORIAL ======== -->
+        <!-- PAGE 4: TUTORIAL -->
         <section id="page-tutorial" class="page">
             <div class="page-header">
                 <h2><i data-lucide="book-open"></i> Tutorial Pengisian</h2>
-                <p>Panduan lengkap cara mengisi dan mengupload data sekolah</p>
+                <p>Panduan lengkap cara menggunakan Portal SPP Gjatian</p>
             </div>
 
-            <!-- Steps -->
             <div class="tutorial-steps">
-                <!-- Step 1 -->
                 <div class="tutorial-card">
                     <div class="step-number">1</div>
                     <div class="tutorial-content">
-                        <h3>Unduh Template Excel</h3>
-                        <p>Kunjungi menu <strong>"Upload Excel"</strong> lalu klik tombol 
-                        <strong>"Unduh Template"</strong> untuk mendapatkan file Excel kosong yang sudah ada formatnya.</p>
-                        <div class="tutorial-image">
-                            <img src="assets/tutorial/step1-unduh-template.png" 
-                                 alt="Tutorial Langkah 1 - Unduh Template"
-                                 onerror="this.parentElement.innerHTML='<div class=\'img-placeholder\'><i data-lucide=\'image\'></i><p>Gambar Tutorial: Unduh Template</p><small>Ganti file: assets/tutorial/step1-unduh-template.png</small></div>'; lucide.createIcons();">
-                        </div>
+                        <h3>Isi Data Sekolah</h3>
+                        <p>Buka menu <strong>"Data Sekolah"</strong>, isi form dengan lengkap, lalu klik <strong>"Simpan & Lanjutkan ke MBG"</strong>.</p>
                     </div>
                 </div>
 
-                <!-- Step 2 -->
                 <div class="tutorial-card">
                     <div class="step-number">2</div>
                     <div class="tutorial-content">
-                        <h3>Isi Data di Template</h3>
-                        <p>Buka file Excel yang sudah diunduh, lalu isi data sesuai kolom yang tersedia. 
-                        Pastikan <strong>tidak mengubah header</strong> kolom.</p>
-                        <div class="tutorial-image">
-                            <img src="assets/tutorial/step2-isi-template.png" 
-                                 alt="Tutorial Langkah 2 - Isi Template"
-                                 onerror="this.parentElement.innerHTML='<div class=\'img-placeholder\'><i data-lucide=\'image\'></i><p>Gambar Tutorial: Isi Template Excel</p><small>Ganti file: assets/tutorial/step2-isi-template.png</small></div>'; lucide.createIcons();">
-                        </div>
+                        <h3>Unduh Template MBG</h3>
+                        <p>Di menu <strong>"Data MBG"</strong>, klik <strong>"Unduh Template MBG"</strong> untuk mendapatkan file Excel dengan 2 sheet (PM dan Guru & Tendik).</p>
                     </div>
                 </div>
 
-                <!-- Step 3 -->
                 <div class="tutorial-card">
                     <div class="step-number">3</div>
                     <div class="tutorial-content">
-                        <h3>Upload File Excel</h3>
-                        <p>Kembali ke menu <strong>"Upload Excel"</strong>, drag & drop atau pilih file Excel 
-                        yang sudah diisi. Preview data akan muncul sebelum diupload.</p>
-                        <div class="tutorial-image">
-                            <img src="assets/tutorial/step3-upload.png" 
-                                 alt="Tutorial Langkah 3 - Upload File"
-                                 onerror="this.parentElement.innerHTML='<div class=\'img-placeholder\'><i data-lucide=\'image\'></i><p>Gambar Tutorial: Upload File Excel</p><small>Ganti file: assets/tutorial/step3-upload.png</small></div>'; lucide.createIcons();">
-                        </div>
+                        <h3>Isi Template Excel</h3>
+                        <p>Buka file Excel, isi data di sheet <strong>PM</strong> untuk siswa dan sheet <strong>Guru & Tendik</strong> untuk guru. Jangan ubah header kolom.</p>
                     </div>
                 </div>
 
-                <!-- Step 4 -->
                 <div class="tutorial-card">
                     <div class="step-number">4</div>
                     <div class="tutorial-content">
+                        <h3>Upload File Excel</h3>
+                        <p>Kembali ke menu <strong>"Data MBG"</strong>, pilih sekolah, lalu drag & drop file Excel. Preview data akan muncul sebelum disimpan.</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-card">
+                    <div class="step-number">5</div>
+                    <div class="tutorial-content">
                         <h3>Verifikasi Data</h3>
-                        <p>Setelah upload berhasil, kunjungi menu <strong>"Data Tersimpan"</strong> untuk 
-                        memastikan seluruh data sudah masuk dengan benar.</p>
-                        <div class="tutorial-image">
-                            <img src="assets/tutorial/step4-verifikasi.png" 
-                                 alt="Tutorial Langkah 4 - Verifikasi Data"
-                                 onerror="this.parentElement.innerHTML='<div class=\'img-placeholder\'><i data-lucide=\'image\'></i><p>Gambar Tutorial: Verifikasi Data</p><small>Ganti file: assets/tutorial/step4-verifikasi.png</small></div>'; lucide.createIcons();">
-                        </div>
+                        <p>Buka menu <strong>"Data Tersimpan"</strong> untuk melihat semua data yang sudah masuk. Gunakan fitur search dan filter untuk mencari data.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- FAQ -->
             <div class="card">
                 <div class="section-title">
                     <i data-lucide="help-circle"></i>
@@ -536,12 +512,12 @@
                             <i data-lucide="chevron-down"></i>
                         </button>
                         <div class="faq-answer">
-                            <p>Ya! Anda bisa mengisi langsung melalui menu <strong>"Form Pengisian"</strong> tanpa perlu file Excel.</p>
+                            <p>Untuk data sekolah bisa langsung via form. Untuk data MBG (Siswa & Guru) saat ini hanya via upload Excel.</p>
                         </div>
                     </div>
                     <div class="faq-item">
                         <button class="faq-question" onclick="toggleFaq(this)">
-                            <span>Bagaimana jika NPSN salah input?</span>
+                            <span>Bagaimana jika data salah input?</span>
                             <i data-lucide="chevron-down"></i>
                         </button>
                         <div class="faq-answer">
@@ -553,13 +529,13 @@
         </section>
     </main>
 
-    <!-- ============ TOAST NOTIFICATION ============ -->
+    <!-- TOAST NOTIFICATION -->
     <div id="toast" class="toast">
         <i data-lucide="check-circle" id="toastIcon"></i>
         <span id="toastMessage"></span>
     </div>
 
-    <!-- ============ MODAL ============ -->
+    <!-- MODAL -->
     <div id="modal" class="modal-overlay" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -572,7 +548,6 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="js/supabaseClient.js"></script>
     <script src="js/excelHandler.js"></script>
     <script src="js/app.js"></script>
