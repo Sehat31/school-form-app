@@ -4,7 +4,7 @@
 const SUPABASE_URL = 'https://ngxnutcjejdxuqkirxvi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5neG51dGNqZWpkeHVxa2lyeHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODE2NjUsImV4cCI6MjA5OTE1NzY2NX0.GvhbH_cdLnDeGTXpYuvdT7Q_Uo5cTwN-13rTs4Tn-DI';
 
-// PENTING: Gunakan nama 'db' BUKAN 'supabase' agar tidak bentrok dengan library dari CDN
+// PENTING: Gunakan nama 'db' BUKAN 'supabase' agar tidak bentrok
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================
