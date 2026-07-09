@@ -7,20 +7,39 @@ let parsedPMData = [];
 let parsedGuruData = [];
 
 /**
- * Download Template MBG Excel
+ * Download Template MBG Excel dengan Format Warna
  */
 function downloadMBGTemplate() {
     // Sheet 1: PM (Penerima Manfaat)
-    const pmHeaders = ['NIK (16 Digit)', 'NISN (10 Digit)', 'Nama Lengkap', 'Tempat Lahir', 
-                       'Tanggal Lahir', 'Jenis Kelamin', 'Nama Orang Tua/Wali', 'Kelas', 'Keterangan'];
+    const pmHeaders = [
+        'NIK (16 Digit)', 
+        'NISN (10 Digit)', 
+        'NAMA LENGKAP (Sesuai Akta/KTP)', 
+        'TEMPAT LAHIR (Kota/Kabupaten)', 
+        'TANGGAL LAHIR (dd-mm-yyyy)', 
+        'JENIS KELAMIN (L/P)', 
+        'NAMA ORANG TUA/WALI (Ayah/Ibu/Wali)', 
+        'KELAS (Contoh: 1,7,10)', 
+        'KETERANGAN (Opsional)'
+    ];
+    
+    // Data contoh (akan dihapus oleh user)
     const pmExample = [
         ['3201010101010001', '0012345678', 'Ahmad Fauzi', 'Jakarta', '01-01-2015', 'L', 'Budi Santoso', '1', '-'],
         ['3201010101010002', '0012345679', 'Siti Nurhaliza', 'Bandung', '15-03-2014', 'P', 'Ahmad Dahlan', '2', '-'],
     ];
 
     // Sheet 2: Guru & Tendik
-    const guruHeaders = ['NIK (16 Digit)', 'Nama Lengkap', 'Tempat Lahir', 'Tanggal Lahir', 
-                         'Jenis Kelamin', 'Jabatan', 'Keterangan'];
+    const guruHeaders = [
+        'NIK (16 Digit)', 
+        'NAMA LENGKAP (Sesuai KTP)', 
+        'TEMPAT LAHIR (Kota/Kabupaten)', 
+        'TANGGAL LAHIR (dd-mm-yyyy)', 
+        'JENIS KELAMIN (L/P)', 
+        'JABATAN (Guru/Tendik)', 
+        'KETERANGAN (Opsional)'
+    ];
+    
     const guruExample = [
         ['3201010101010003', 'Drs. H. Ahmad Dahlan, M.Pd', 'Surabaya', '10-05-1975', 'L', 'Kepala Sekolah', '-'],
         ['3201010101010004', 'Siti Aminah, M.Pd', 'Bandung', '15-08-1985', 'P', 'Guru', '-'],
@@ -28,18 +47,99 @@ function downloadMBGTemplate() {
 
     const wb = XLSX.utils.book_new();
 
-    // Add PM sheet
+    // ============================================
+    // SHEET 1: PM (Penerima Manfaat) - HEADER BIRU
+    // ============================================
     const pmData = [pmHeaders, ...pmExample];
     const pmWs = XLSX.utils.aoa_to_sheet(pmData);
-    pmWs['!cols'] = [{ wch: 18 }, { wch: 14 }, { wch: 25 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 8 }, { wch: 15 }];
+    
+    // Set column widths
+    pmWs['!cols'] = [
+        { wch: 18 }, // NIK
+        { wch: 14 }, // NISN
+        { wch: 30 }, // Nama Lengkap
+        { wch: 18 }, // Tempat Lahir
+        { wch: 16 }, // Tanggal Lahir
+        { wch: 14 }, // Jenis Kelamin
+        { wch: 25 }, // Nama Orang Tua
+        { wch: 10 }, // Kelas
+        { wch: 15 }  // Keterangan
+    ];
+    
+    // Format Header (Baris 1) - BIRU
+    const pmHeaderRange = XLSX.utils.decode_range(pmWs['!ref']);
+    for (let col = pmHeaderRange.s.c; col <= pmHeaderRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (pmWs[cellAddress]) {
+            pmWs[cellAddress].s = {
+                fill: { fgColor: { rgb: "2563EB" } }, // Biru
+                font: { bold: true, color: { rgb: "FFFFFF" } }, // Putih & Bold
+                alignment: { horizontal: "center", vertical: "center", wrapText: true }
+            };
+        }
+    }
+    
+    // Format Data Contoh (Baris 2-3) - MERAH & MIRING
+    for (let row = 1; row <= 2; row++) {
+        for (let col = pmHeaderRange.s.c; col <= pmHeaderRange.e.c; col++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+            if (pmWs[cellAddress]) {
+                pmWs[cellAddress].s = {
+                    font: { italic: true, color: { rgb: "DC2626" } }, // Merah & Miring
+                    alignment: { vertical: "center" }
+                };
+            }
+        }
+    }
+    
     XLSX.utils.book_append_sheet(wb, pmWs, 'PM (Penerima Manfaat)');
 
-    // Add Guru sheet
+    // ============================================
+    // SHEET 2: Guru & Tendik - HEADER HIJAU
+    // ============================================
     const guruData = [guruHeaders, ...guruExample];
     const guruWs = XLSX.utils.aoa_to_sheet(guruData);
-    guruWs['!cols'] = [{ wch: 18 }, { wch: 30 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 15 }];
+    
+    // Set column widths
+    guruWs['!cols'] = [
+        { wch: 18 }, // NIK
+        { wch: 35 }, // Nama Lengkap
+        { wch: 18 }, // Tempat Lahir
+        { wch: 16 }, // Tanggal Lahir
+        { wch: 14 }, // Jenis Kelamin
+        { wch: 20 }, // Jabatan
+        { wch: 15 }  // Keterangan
+    ];
+    
+    // Format Header (Baris 1) - HIJAU
+    const guruHeaderRange = XLSX.utils.decode_range(guruWs['!ref']);
+    for (let col = guruHeaderRange.s.c; col <= guruHeaderRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (guruWs[cellAddress]) {
+            guruWs[cellAddress].s = {
+                fill: { fgColor: { rgb: "10B981" } }, // Hijau
+                font: { bold: true, color: { rgb: "FFFFFF" } }, // Putih & Bold
+                alignment: { horizontal: "center", vertical: "center", wrapText: true }
+            };
+        }
+    }
+    
+    // Format Data Contoh (Baris 2-3) - MERAH & MIRING
+    for (let row = 1; row <= 2; row++) {
+        for (let col = guruHeaderRange.s.c; col <= guruHeaderRange.e.c; col++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+            if (guruWs[cellAddress]) {
+                guruWs[cellAddress].s = {
+                    font: { italic: true, color: { rgb: "DC2626" } }, // Merah & Miring
+                    alignment: { vertical: "center" }
+                };
+            }
+        }
+    }
+    
     XLSX.utils.book_append_sheet(wb, guruWs, 'Guru & Tendik');
 
+    // Download file
     XLSX.writeFile(wb, 'Template_Data_MBG.xlsx');
     showToast('Template MBG berhasil diunduh!', 'success');
 }
