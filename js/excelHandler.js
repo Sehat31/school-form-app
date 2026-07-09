@@ -3,39 +3,45 @@
 // ============================================
 
 let selectedFile = null;
-let parsedExcelData = [];
+let parsedPMData = [];
+let parsedGuruData = [];
 
 /**
- * Download Excel Template
+ * Download Template MBG Excel
  */
-function downloadTemplate() {
-    const headers = ['Jenjang', 'Nama Sekolah', 'NPSN', 'Alamat Sekolah', 'Nama PIC', 'Nomor HP PIC', 'SPP Bulanan'];
-    
-    const exampleData = [
-        ['SD', 'SDN 1 Menteng', '20100123', 'Jl. Menteng Raya No. 10, Jakarta Pusat 10310', 'Budi Santoso, S.Pd', '081234567890', 500000],
-        ['SMP', 'SMPN 5 Bandung', '20201234', 'Jl. Belitung No. 8, Bandung 40113', 'Siti Aminah, M.Pd', '089876543210', 750000],
-        ['SMA', 'SMAN 3 Surabaya', '20501567', 'Jl. Genteng Kali No. 15, Surabaya 60275', 'Ahmad Fauzi', '081112223334', 1000000],
+function downloadMBGTemplate() {
+    // Sheet 1: PM (Penerima Manfaat)
+    const pmHeaders = ['NIK (16 Digit)', 'NISN (10 Digit)', 'Nama Lengkap', 'Tempat Lahir', 
+                       'Tanggal Lahir', 'Jenis Kelamin', 'Nama Orang Tua/Wali', 'Kelas', 'Keterangan'];
+    const pmExample = [
+        ['3201010101010001', '0012345678', 'Ahmad Fauzi', 'Jakarta', '01-01-2015', 'L', 'Budi Santoso', '1', '-'],
+        ['3201010101010002', '0012345679', 'Siti Nurhaliza', 'Bandung', '15-03-2014', 'P', 'Ahmad Dahlan', '2', '-'],
     ];
 
-    const wsData = [headers, ...exampleData];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Set column widths
-    ws['!cols'] = [
-        { wch: 10 },  // Jenjang
-        { wch: 25 },  // Nama Sekolah
-        { wch: 12 },  // NPSN
-        { wch: 45 },  // Alamat
-        { wch: 22 },  // Nama PIC
-        { wch: 18 },  // Nomor HP
-        { wch: 15 },  // SPP
+    // Sheet 2: Guru & Tendik
+    const guruHeaders = ['NIK (16 Digit)', 'Nama Lengkap', 'Tempat Lahir', 'Tanggal Lahir', 
+                         'Jenis Kelamin', 'Jabatan', 'Keterangan'];
+    const guruExample = [
+        ['3201010101010003', 'Drs. H. Ahmad Dahlan, M.Pd', 'Surabaya', '10-05-1975', 'L', 'Kepala Sekolah', '-'],
+        ['3201010101010004', 'Siti Aminah, M.Pd', 'Bandung', '15-08-1985', 'P', 'Guru', '-'],
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data Sekolah');
 
-    XLSX.writeFile(wb, 'Template_Data_Sekolah.xlsx');
-    showToast('Template berhasil diunduh!', 'success');
+    // Add PM sheet
+    const pmData = [pmHeaders, ...pmExample];
+    const pmWs = XLSX.utils.aoa_to_sheet(pmData);
+    pmWs['!cols'] = [{ wch: 18 }, { wch: 14 }, { wch: 25 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 8 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, pmWs, 'PM (Penerima Manfaat)');
+
+    // Add Guru sheet
+    const guruData = [guruHeaders, ...guruExample];
+    const guruWs = XLSX.utils.aoa_to_sheet(guruData);
+    guruWs['!cols'] = [{ wch: 18 }, { wch: 30 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, guruWs, 'Guru & Tendik');
+
+    XLSX.writeFile(wb, 'Template_Data_MBG.xlsx');
+    showToast('Template MBG berhasil diunduh!', 'success');
 }
 
 /**
@@ -43,7 +49,7 @@ function downloadTemplate() {
  */
 function handleFileSelect(event) {
     const file = event.target.files[0];
-    if (file) processFile(file);
+    if (file) processMBGFile(file);
 }
 
 /**
@@ -62,22 +68,18 @@ function handleDrop(event) {
     event.preventDefault();
     event.currentTarget.classList.remove('dragover');
     const file = event.dataTransfer.files[0];
-    if (file) processFile(file);
+    if (file) processMBGFile(file);
 }
 
 /**
- * Process selected file
+ * Process MBG Excel file
  */
-function processFile(file) {
+function processMBGFile(file) {
     // Validate file type
-    const validTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel'
-    ];
     const validExts = ['.xlsx', '.xls'];
     const ext = '.' + file.name.split('.').pop().toLowerCase();
 
-    if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+    if (!validExts.includes(ext)) {
         showToast('Format file tidak didukung! Gunakan .xlsx atau .xls', 'error');
         return;
     }
@@ -102,12 +104,25 @@ function processFile(file) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
-            parsedExcelData = jsonData;
-            renderExcelPreview(jsonData);
-            showToast(`${jsonData.length} baris data berhasil dibaca`, 'success');
+            // Parse PM sheet
+            if (workbook.SheetNames.includes('PM (Penerima Manfaat)')) {
+                const pmSheet = workbook.Sheets['PM (Penerima Manfaat)'];
+                const pmJson = XLSX.utils.sheet_to_json(pmSheet);
+                parsedPMData = pmJson;
+                renderPMPreview(pmJson);
+            }
+
+            // Parse Guru sheet
+            if (workbook.SheetNames.includes('Guru & Tendik')) {
+                const guruSheet = workbook.Sheets['Guru & Tendik'];
+                const guruJson = XLSX.utils.sheet_to_json(guruSheet);
+                parsedGuruData = guruJson;
+                renderGuruPreview(guruJson);
+            }
+
+            const totalRows = parsedPMData.length + parsedGuruData.length;
+            showToast(`File berhasil dibaca: ${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik`, 'success');
         } catch (err) {
             showToast('Gagal membaca file Excel!', 'error');
             console.error(err);
@@ -117,23 +132,27 @@ function processFile(file) {
 }
 
 /**
- * Render Excel preview table
+ * Render PM Preview
  */
-function renderExcelPreview(data) {
-    const container = document.getElementById('excelPreviewTable');
-    
+function renderPMPreview(data) {
+    const container = document.getElementById('pmPreview');
+    const tableContainer = document.getElementById('pmPreviewTable');
+    const countEl = document.getElementById('pmCount');
+
     if (!data || data.length === 0) {
-        container.innerHTML = '<p style="padding:16px;text-align:center;color:var(--text-light)">File kosong atau tidak ada data</p>';
+        container.style.display = 'none';
         return;
     }
+
+    container.style.display = 'block';
+    countEl.textContent = data.length;
 
     const headers = Object.keys(data[0]);
     let html = '<table><thead><tr>';
     headers.forEach(h => { html += `<th>${h}</th>`; });
     html += '</tr></thead><tbody>';
 
-    // Show max 20 rows preview
-    const previewRows = data.slice(0, 20);
+    const previewRows = data.slice(0, 10);
     previewRows.forEach(row => {
         html += '<tr>';
         headers.forEach(h => { html += `<td>${row[h] || ''}</td>`; });
@@ -141,14 +160,47 @@ function renderExcelPreview(data) {
     });
 
     html += '</tbody></table>';
-
-    if (data.length > 20) {
-        html += `<p style="padding:10px 16px;text-align:center;color:var(--text-light);font-size:0.825rem">
-            Menampilkan 20 dari ${data.length} baris
-        </p>`;
+    if (data.length > 10) {
+        html += `<p style="padding:10px;text-align:center;color:var(--text-light);font-size:0.825rem">Menampilkan 10 dari ${data.length} baris</p>`;
     }
 
-    container.innerHTML = html;
+    tableContainer.innerHTML = html;
+}
+
+/**
+ * Render Guru Preview
+ */
+function renderGuruPreview(data) {
+    const container = document.getElementById('guruPreview');
+    const tableContainer = document.getElementById('guruPreviewTable');
+    const countEl = document.getElementById('guruCount');
+
+    if (!data || data.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    countEl.textContent = data.length;
+
+    const headers = Object.keys(data[0]);
+    let html = '<table><thead><tr>';
+    headers.forEach(h => { html += `<th>${h}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    const previewRows = data.slice(0, 10);
+    previewRows.forEach(row => {
+        html += '<tr>';
+        headers.forEach(h => { html += `<td>${row[h] || ''}</td>`; });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    if (data.length > 10) {
+        html += `<p style="padding:10px;text-align:center;color:var(--text-light);font-size:0.825rem">Menampilkan 10 dari ${data.length} baris</p>`;
+    }
+
+    tableContainer.innerHTML = html;
 }
 
 /**
@@ -156,10 +208,13 @@ function renderExcelPreview(data) {
  */
 function removeFile() {
     selectedFile = null;
-    parsedExcelData = [];
+    parsedPMData = [];
+    parsedGuruData = [];
     document.getElementById('filePreview').style.display = 'none';
     document.getElementById('uploadZone').style.display = 'block';
     document.getElementById('fileInput').value = '';
+    document.getElementById('pmPreview').style.display = 'none';
+    document.getElementById('guruPreview').style.display = 'none';
 }
 
 /**
