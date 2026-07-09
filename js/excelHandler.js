@@ -113,10 +113,10 @@ async function downloadMBGTemplate() {
         a.download = 'Template_Data_MBG.xlsx';
         a.click();
         window.URL.revokeObjectURL(url);
-        showToast('Template Berwarna berhasil diunduh!', 'success');
+        showToast('✅ Template berhasil diunduh!', 'success');
     } catch (error) {
         console.error(error);
-        showToast('Gagal membuat template', 'error');
+        showToast('❌ Gagal membuat template', 'error');
     }
 }
 
@@ -155,12 +155,12 @@ function processMBGFile(file) {
     const ext = '.' + file.name.split('.').pop().toLowerCase();
 
     if (!validExts.includes(ext)) {
-        showToast('Format file tidak didukung! Gunakan .xlsx atau .xls', 'error');
+        showToast('❌ Format file tidak didukung!\nGunakan file .xlsx atau .xls', 'error');
         return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-        showToast('Ukuran file terlalu besar! Maksimal 10MB', 'error');
+        showToast('❌ Ukuran file terlalu besar!\nMaksimal 10 MB', 'error');
         return;
     }
 
@@ -209,8 +209,8 @@ function processMBGFile(file) {
                         const result = validateNIK(nik);
                         if (!result.valid) {
                             invalidNIKCount++;
-                            if (invalidNIKList.length < 10) {
-                                invalidNIKList.push(`Baris ${index + 2} (PM): NIK "${nik}" - ${result.message}`);
+                            if (invalidNIKList.length < 5) {
+                                invalidNIKList.push(`Baris ${index + 2}: ${nik} - ${result.message}`);
                             }
                         }
                     }
@@ -233,8 +233,8 @@ function processMBGFile(file) {
                         const result = validateNIK(nik);
                         if (!result.valid) {
                             invalidNIKCount++;
-                            if (invalidNIKList.length < 10) {
-                                invalidNIKList.push(`Baris ${index + 2} (Guru): NIK "${nik}" - ${result.message}`);
+                            if (invalidNIKList.length < 5) {
+                                invalidNIKList.push(`Baris ${index + 2}: ${nik} - ${result.message}`);
                             }
                         }
                     }
@@ -268,30 +268,33 @@ function processMBGFile(file) {
 
             // --- HASIL VALIDASI ---
             if (invalidNIKCount > 0 || duplicateNIKList.length > 0) {
-                let errorMsg = `⚠️ DITEMUKAN MASALAH PADA FILE!\n\n`;
+                // Format toast message yang lebih rapi
+                let toastMessage = '⚠️ File tidak valid!\n\n';
                 
                 if (invalidNIKCount > 0) {
-                    errorMsg += `❌ ${invalidNIKCount} NIK TIDAK VALID (format salah):\n`;
-                    errorMsg += invalidNIKList.join('\n');
-                    errorMsg += '\n\n';
+                    toastMessage += `❌ ${invalidNIKCount} NIK tidak valid\n`;
+                    if (invalidNIKList.length > 0) {
+                        toastMessage += invalidNIKList.slice(0, 3).join('\n') + '\n';
+                        if (invalidNIKList.length > 3) {
+                            toastMessage += `   ...dan ${invalidNIKList.length - 3} NIK lainnya\n`;
+                        }
+                    }
+                    toastMessage += '\n';
                 }
                 
                 if (duplicateNIKList.length > 0) {
-                    errorMsg += `❌ ${duplicateNIKList.length} NIK DUPLIKAT DALAM FILE:\n`;
-                    duplicateNIKList.forEach(dup => {
-                        errorMsg += `\n• NIK "${dup.nik}" muncul ${dup.count}x di:\n`;
-                        errorMsg += `  ${dup.locations.join('\n  ')}`;
+                    toastMessage += ` ${duplicateNIKList.length} NIK duplikat\n`;
+                    duplicateNIKList.slice(0, 3).forEach(dup => {
+                        toastMessage += `   • ${dup.nik} (${dup.count}x)\n`;
                     });
-                    errorMsg += '\n\n';
+                    if (duplicateNIKList.length > 3) {
+                        toastMessage += `   ...dan ${duplicateNIKList.length - 3} NIK lainnya\n`;
+                    }
                 }
                 
-                errorMsg += `Silakan perbaiki file Excel dan upload ulang.`;
+                toastMessage += '\n💡 Silakan perbaiki file Excel';
                 
-                showToast(errorMsg, 'error');
-                
-                setTimeout(() => {
-                    alert(`⚠️ PERINGATAN!\n\nDitemukan ${invalidNIKCount} NIK tidak valid dan ${duplicateNIKList.length} NIK duplikat.\n\nSilakan perbaiki file Excel Anda sebelum melanjutkan upload.`);
-                }, 500);
+                showToast(toastMessage, 'error');
                 
                 // Reset data agar tidak bisa di-upload
                 parsedPMData = [];
@@ -301,15 +304,15 @@ function processMBGFile(file) {
             } else {
                 const totalRows = parsedPMData.length + parsedGuruData.length;
                 if (totalRows === 0) {
-                    showToast('File tidak berisi data. Pastikan sheet bernama "PM" dan "Guru & Tendik"', 'error');
+                    showToast('❌ File kosong!\nPastikan sheet "PM" dan "Guru & Tendik" berisi data', 'error');
                 } else {
-                    showToast(`✅ File valid! ${parsedPMData.length} PM + ${parsedGuruData.length} Guru siap diupload.`, 'success');
+                    showToast(`✅ File valid!\n${parsedPMData.length} Siswa + ${parsedGuruData.length} Guru siap upload`, 'success');
                 }
             }
 
         } catch (err) {
             console.error('Error parsing Excel:', err);
-            showToast('Gagal membaca file Excel: ' + err.message, 'error');
+            showToast('❌ Gagal membaca file\n' + err.message, 'error');
         }
     };
     reader.readAsArrayBuffer(file);
@@ -420,23 +423,23 @@ function validateNIK(nik) {
 
     // 1. Harus tepat 16 digit angka
     if (!/^\d{16}$/.test(str)) {
-        return { valid: false, message: "Harus tepat 16 digit angka (bukan huruf/spasi)", gender: '-' };
+        return { valid: false, message: "Harus 16 digit angka", gender: '-' };
     }
 
     // 2. Tidak boleh semua digit sama
     if (/^(.)\1{15}$/.test(str)) {
-        return { valid: false, message: "Semua digit tidak boleh sama (contoh: 0000000000000000)", gender: '-' };
+        return { valid: false, message: "Digit tidak boleh sama semua", gender: '-' };
     }
 
     // 3. Deteksi pola berulang (9090909090909090)
     const pola2Digit = str.substring(0, 2);
     if (str === pola2Digit.repeat(8)) {
-        return { valid: false, message: `NIK pola berulang terdeteksi (${str}) - kemungkinan NIK palsu`, gender: '-' };
+        return { valid: false, message: "Pola berulang terdeteksi", gender: '-' };
     }
 
     // 4. Deteksi NIK berurutan
     if (/^1234567890123456$/.test(str) || /^9876543210987654$/.test(str)) {
-        return { valid: false, message: "NIK berurutan terdeteksi - bukan NIK asli", gender: '-' };
+        return { valid: false, message: "NIK berurutan (bukan NIK asli)", gender: '-' };
     }
 
     // 5. Ekstrak Tanggal Lahir (Digit ke-7 sampai 12: DD MM YY)
@@ -453,25 +456,25 @@ function validateNIK(nik) {
 
     // 6. Validasi Bulan (1-12)
     if (mm < 1 || mm > 12) {
-        return { valid: false, message: `Bulan tidak valid (${mm}) - harus 01-12`, gender: '-' };
+        return { valid: false, message: `Bulan tidak valid (${mm})`, gender: '-' };
     }
 
     // 7. Validasi Tanggal
     const date = new Date(1900 + yy, mm - 1, dd);
     if (date.getFullYear() % 100 !== yy || date.getMonth() + 1 !== mm || date.getDate() !== dd) {
-        return { valid: false, message: `Tanggal lahir tidak valid (${dd}-${mm}-${yy})`, gender: '-' };
+        return { valid: false, message: `Tanggal tidak valid`, gender: '-' };
     }
 
     // 8. Deteksi NIK dengan banyak angka 9
     const count9 = (str.match(/9/g) || []).length;
     if (count9 >= 12) {
-        return { valid: false, message: `NIK mengandung terlalu banyak angka 9 (${count9}x) - kemungkinan NIK palsu`, gender: '-' };
+        return { valid: false, message: "Terlalu banyak angka 9", gender: '-' };
     }
 
     // 9. Deteksi NIK dengan banyak angka 0
     const count0 = (str.match(/0/g) || []).length;
     if (count0 >= 12) {
-        return { valid: false, message: `NIK mengandung terlalu banyak angka 0 (${count0}x) - kemungkinan NIK palsu`, gender: '-' };
+        return { valid: false, message: "Terlalu banyak angka 0", gender: '-' };
     }
 
     return { valid: true, message: "Valid", gender: isFemale ? 'P' : 'L' };
