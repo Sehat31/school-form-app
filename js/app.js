@@ -2,11 +2,15 @@
 // MAIN APPLICATION
 // ============================================
 
-let allData = [];
+let allSekolahData = [];
+let allPMData = [];
+let allGuruData = [];
+let currentDataTab = 'sekolah';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
+    loadSchoolDropdown();
 });
 
 // ============================================
@@ -14,35 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================
 
 function showPage(pageName) {
-    // Hide all pages
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    // Show target page
     document.getElementById(`page-${pageName}`).classList.add('active');
 
-    // Update nav links
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     const activeLink = document.querySelector(`.nav-link[data-page="${pageName}"]`);
     if (activeLink) activeLink.classList.add('active');
 
-    // Load data if needed
-    if (pageName === 'data') loadData();
-    if (pageName === 'upload') loadUploadedFiles();
+    if (pageName === 'data') loadAllData();
+    if (pageName === 'mbg') {
+        loadSchoolDropdown();
+        loadUploadedFiles();
+    }
 
-    // Close mobile menu
     document.querySelector('.nav-menu')?.classList.remove('open');
-
     lucide.createIcons();
 }
 
 function toggleMobileMenu() {
     document.querySelector('.nav-menu').classList.toggle('open');
-}
-
-function scrollToSection(sectionId) {
-    setTimeout(() => {
-        const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
 }
 
 // ============================================
@@ -59,6 +53,7 @@ function toggleExample() {
 function fillExample() {
     document.getElementById('jenjang').value = 'SD';
     document.getElementById('nama_sekolah').value = 'SDN 1 Menteng';
+    document.getElementById('nama_kepsek').value = 'Drs. H. Ahmad Dahlan, M.Pd';
     document.getElementById('npsn').value = '20100123';
     document.getElementById('alamat_sekolah').value = 'Jl. Menteng Raya No. 10, Jakarta Pusat 10310';
     document.getElementById('nama_pic').value = 'Budi Santoso, S.Pd';
@@ -68,7 +63,7 @@ function fillExample() {
 }
 
 // ============================================
-// FORM HANDLING
+// FORM HANDLING - SEKOLAH
 // ============================================
 
 function formatCurrency(input) {
@@ -88,10 +83,10 @@ async function handleSubmit(event) {
     lucide.createIcons();
 
     try {
-         const formData = {
+        const formData = {
             jenjang: document.getElementById('jenjang').value,
             nama_sekolah: document.getElementById('nama_sekolah').value,
-            nama_kepsek: document.getElementById('nama_kepsek').value, // <--- TAMBAHKAN INI
+            nama_kepsek: document.getElementById('nama_kepsek').value,
             npsn: document.getElementById('npsn').value,
             alamat_sekolah: document.getElementById('alamat_sekolah').value,
             nama_pic: document.getElementById('nama_pic').value,
@@ -100,14 +95,20 @@ async function handleSubmit(event) {
         };
 
         await insertSchool(formData);
-        showToast('Data berhasil disimpan!', 'success');
-        resetForm();
+        showToast('Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
+        
+        // Auto-switch ke halaman MBG
+        setTimeout(() => {
+            showPage('mbg');
+            document.getElementById('select_npsn_mbg').value = formData.npsn;
+            loadSchoolInfo();
+        }, 1000);
     } catch (error) {
         console.error(error);
         showToast('Gagal menyimpan data: ' + error.message, 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="save"></i> Simpan Data';
+        btn.innerHTML = '<i data-lucide="save"></i> Simpan & Lanjutkan ke MBG';
         lucide.createIcons();
     }
 }
@@ -115,21 +116,59 @@ async function handleSubmit(event) {
 function resetForm() {
     document.getElementById('schoolForm').reset();
 }
-        // Setelah sukses simpan sekolah, scroll ke bagian Upload MBG
-        showToast('Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
-        setTimeout(() => {
-            showPage('upload'); // Pindah ke tab Upload
-            scrollToSection('mbg-upload-section'); // Scroll ke area MBG
-            // Otomatis isi NPSN di dropdown MBG (akan kita buat di step berikutnya)
-            document.getElementById('select_npsn_mbg').value = formData.npsn;
-        }, 1000);
 
 // ============================================
-// UPLOAD FILE
+// MBG FUNCTIONS
 // ============================================
 
-async function uploadFile() {
-    if (!selectedFile || parsedExcelData.length === 0) {
+async function loadSchoolDropdown() {
+    try {
+        const schools = await getAllSchools();
+        const select = document.getElementById('select_npsn_mbg');
+        select.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
+        
+        schools.forEach(school => {
+            const option = document.createElement('option');
+            option.value = school.npsn;
+            option.textContent = `${school.npsn} - ${school.nama_sekolah}`;
+            option.dataset.sekolahId = school.id;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Gagal load sekolah:', error);
+    }
+}
+
+function loadSchoolInfo() {
+    const select = document.getElementById('select_npsn_mbg');
+    const selectedOption = select.options[select.selectedIndex];
+    const npsn = select.value;
+
+    if (!npsn) {
+        document.getElementById('schoolInfoDisplay').style.display = 'none';
+        return;
+    }
+
+    const sekolahId = selectedOption.dataset.sekolahId;
+    const namaSekolah = selectedOption.textContent.split(' - ')[1];
+    const jenjang = allSekolahData.find(s => s.npsn === npsn)?.jenjang || '-';
+    const kepsek = allSekolahData.find(s => s.npsn === npsn)?.nama_kepsek || '-';
+
+    document.getElementById('infoNamaSekolah').textContent = namaSekolah;
+    document.getElementById('infoJenjang').textContent = jenjang;
+    document.getElementById('infoKepsek').textContent = kepsek;
+    document.getElementById('schoolInfoDisplay').style.display = 'block';
+}
+
+async function uploadMBGFile() {
+    const npsn = document.getElementById('select_npsn_mbg').value;
+    
+    if (!npsn) {
+        showToast('Pilih sekolah terlebih dahulu!', 'error');
+        return;
+    }
+
+    if (!selectedFile || (parsedPMData.length === 0 && parsedGuruData.length === 0)) {
         showToast('Tidak ada data untuk diupload', 'error');
         return;
     }
@@ -140,14 +179,46 @@ async function uploadFile() {
     lucide.createIcons();
 
     try {
+        const sekolahId = document.getElementById('select_npsn_mbg').selectedOptions[0].dataset.sekolahId;
+
         // Upload file to storage
         const fileResult = await uploadFileToStorage(selectedFile);
-        console.log('File uploaded:', fileResult);
 
-        // Insert data to database
-        await insertBulkSchools(parsedExcelData);
+        // Insert PM data
+        if (parsedPMData.length > 0) {
+            const pmRecords = parsedPMData.map(r => ({
+                sekolah_id: parseInt(sekolahId),
+                npsn: npsn,
+                nik: String(r['NIK (16 Digit)'] || r.NIK || ''),
+                nisn: String(r['NISN (10 Digit)'] || r.NISN || ''),
+                nama_lengkap: r['Nama Lengkap'] || '',
+                tempat_lahir: r['Tempat Lahir'] || '',
+                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || ''),
+                jenis_kelamin: r['Jenis Kelamin'] || '',
+                nama_orang_tua: r['Nama Orang Tua/Wali'] || '',
+                kelas: String(r['Kelas'] || ''),
+                keterangan: r['Keterangan'] || ''
+            }));
+            await insertBulkPM(pmRecords);
+        }
 
-        showToast(`${parsedExcelData.length} data berhasil diupload dan disimpan!`, 'success');
+        // Insert Guru data
+        if (parsedGuruData.length > 0) {
+            const guruRecords = parsedGuruData.map(r => ({
+                sekolah_id: parseInt(sekolahId),
+                npsn: npsn,
+                nik: String(r['NIK (16 Digit)'] || r.NIK || ''),
+                nama_lengkap: r['Nama Lengkap'] || '',
+                tempat_lahir: r['Tempat Lahir'] || '',
+                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || ''),
+                jenis_kelamin: r['Jenis Kelamin'] || '',
+                jabatan: r['Jabatan'] || '',
+                keterangan: r['Keterangan'] || ''
+            }));
+            await insertBulkGuru(guruRecords);
+        }
+
+        showToast(`${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik berhasil disimpan!`, 'success');
         removeFile();
         loadUploadedFiles();
     } catch (error) {
@@ -158,6 +229,16 @@ async function uploadFile() {
         btn.innerHTML = '<i data-lucide="cloud-upload"></i> Upload & Simpan ke Database';
         lucide.createIcons();
     }
+}
+
+function parseTanggalLahir(tanggal) {
+    if (!tanggal) return null;
+    // Format: dd-mm-yyyy
+    const parts = String(tanggal).split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to yyyy-mm-dd
+    }
+    return tanggal;
 }
 
 // ============================================
@@ -173,11 +254,7 @@ async function loadUploadedFiles() {
         const files = await getUploadedFiles();
 
         if (files.length === 0) {
-            container.innerHTML = `
-                <div class="loading-placeholder">
-                    <i data-lucide="inbox"></i>
-                    <p>Belum ada file yang diupload</p>
-                </div>`;
+            container.innerHTML = '<div class="loading-placeholder"><i data-lucide="inbox"></i><p>Belum ada file yang diupload</p></div>';
             lucide.createIcons();
             return;
         }
@@ -187,21 +264,13 @@ async function loadUploadedFiles() {
                 <i data-lucide="file-spreadsheet"></i>
                 <div class="file-item-info">
                     <p class="file-item-name">${file.name}</p>
-                    <p class="file-item-meta">
-                        ${formatFileSize(file.metadata?.size || 0)} • 
-                        ${new Date(file.created_at).toLocaleDateString('id-ID', { 
-                            day: 'numeric', month: 'long', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                        })}
-                    </p>
+                    <p class="file-item-meta">${formatFileSize(file.metadata?.size || 0)}</p>
                 </div>
                 <div class="file-item-actions">
-                    <a href="${getFileUrl('excels/' + file.name)}" target="_blank" 
-                       class="btn-icon" title="Download">
+                    <a href="${getFileUrl('excels/' + file.name)}" target="_blank" class="btn-icon" title="Download">
                         <i data-lucide="download"></i>
                     </a>
-                    <button class="btn-icon" title="Hapus" 
-                            onclick="deleteUploadedFile('excels/${file.name}', this)">
+                    <button class="btn-icon" title="Hapus" onclick="deleteUploadedFile('excels/${file.name}')">
                         <i data-lucide="trash-2"></i>
                     </button>
                 </div>
@@ -210,16 +279,12 @@ async function loadUploadedFiles() {
 
         lucide.createIcons();
     } catch (error) {
-        container.innerHTML = `
-            <div class="loading-placeholder">
-                <i data-lucide="alert-circle"></i>
-                <p>Gagal memuat file: ${error.message}</p>
-            </div>`;
+        container.innerHTML = `<div class="loading-placeholder"><i data-lucide="alert-circle"></i><p>Gagal memuat file</p></div>`;
         lucide.createIcons();
     }
 }
 
-async function deleteUploadedFile(path, btn) {
+async function deleteUploadedFile(path) {
     if (!confirm('Yakin ingin menghapus file ini?')) return;
 
     try {
@@ -227,7 +292,7 @@ async function deleteUploadedFile(path, btn) {
         showToast('File berhasil dihapus', 'success');
         loadUploadedFiles();
     } catch (error) {
-        showToast('Gagal menghapus file: ' + error.message, 'error');
+        showToast('Gagal menghapus file', 'error');
     }
 }
 
@@ -235,214 +300,218 @@ async function deleteUploadedFile(path, btn) {
 // DATA TABLE
 // ============================================
 
-async function loadData() {
-    const tbody = document.getElementById('dataTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" class="loading-placeholder"><i data-lucide="loader-2" class="spin"></i><p>Memuat data...</p></td></tr>';
-    lucide.createIcons();
+function showDataTab(tab) {
+    currentDataTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.tab-btn').classList.add('active');
+    filterData();
+}
 
+async function loadAllData() {
     try {
-        allData = await getAllSchools();
-        renderDataTable(allData);
-        updateStats(allData);
+        allSekolahData = await getAllSchools();
+        allPMData = await getAllPM();
+        allGuruData = await getAllGuru();
+        
+        updateStats();
+        filterData();
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="9" class="empty-state"><i data-lucide="alert-circle"></i><p>Gagal memuat data: ${error.message}</p></td></tr>`;
-        lucide.createIcons();
+        console.error('Gagal load data:', error);
     }
 }
 
-function renderDataTable(data) {
-    const tbody = document.getElementById('dataTableBody');
-
-    if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><i data-lucide="inbox"></i><p>Belum ada data</p></td></tr>';
-        lucide.createIcons();
-        return;
-    }
-
-    tbody.innerHTML = data.map((row, idx) => `
-        <tr>
-            <td>${idx + 1}</td>
-            <td><span class="badge">${row.jenjang}</span></td>
-            <td><strong>${row.nama_sekolah}</strong></td>
-            <td><code>${row.npsn}</code></td>
-            <td>${row.alamat_sekolah}</td>
-            <td>${row.nama_pic}</td>
-            <td>${row.nomor_hp}</td>
-            <td>Rp ${parseInt(row.spp_bulanan).toLocaleString('id-ID')}</td>
-            <td>
-                <div class="action-btns">
-                    <button class="btn-icon edit" title="Edit" onclick="editData(${row.id})">
-                        <i data-lucide="pencil"></i>
-                    </button>
-                    <button class="btn-icon delete" title="Hapus" onclick="deleteData(${row.id})">
-                        <i data-lucide="trash-2"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-
-    lucide.createIcons();
-}
-
-function updateStats(data) {
-    document.getElementById('totalSekolah').textContent = data.length;
-
-    const jenjangSet = new Set(data.map(d => d.jenjang));
-    document.getElementById('totalJenjang').textContent = jenjangSet.size;
-
-    if (data.length > 0) {
-        const totalSPP = data.reduce((sum, d) => sum + (parseInt(d.spp_bulanan) || 0), 0);
-        const avg = Math.round(totalSPP / data.length);
-        document.getElementById('avgSPP').textContent = 'Rp ' + avg.toLocaleString('id-ID');
-    }
+function updateStats() {
+    document.getElementById('totalSekolah').textContent = allSekolahData.length;
+    document.getElementById('totalPM').textContent = allPMData.length;
+    document.getElementById('totalGuru').textContent = allGuruData.length;
 }
 
 function filterData() {
     const search = document.getElementById('searchInput').value.toLowerCase();
-    const jenjang = document.getElementById('filterJenjang').value;
+    
+    let data = [];
+    let headers = [];
+    let renderFn;
 
-    let filtered = allData;
-
-    if (jenjang) {
-        filtered = filtered.filter(d => d.jenjang === jenjang);
-    }
-
-    if (search) {
-        filtered = filtered.filter(d =>
+    if (currentDataTab === 'sekolah') {
+        headers = ['No', 'Jenjang', 'Nama Sekolah', 'Kepala Sekolah', 'NPSN', 'Alamat', 'Nama PIC', 'No. HP', 'SPP', 'Aksi'];
+        data = allSekolahData.filter(d => 
             (d.nama_sekolah || '').toLowerCase().includes(search) ||
-            (d.npsn || '').includes(search) ||
-            (d.nama_pic || '').toLowerCase().includes(search) ||
-            (d.alamat_sekolah || '').toLowerCase().includes(search)
+            (d.npsn || '').includes(search)
         );
+        renderFn = renderSekolahTable;
+    } else if (currentDataTab === 'pm') {
+        headers = ['No', 'Sekolah', 'NIK', 'NISN', 'Nama', 'Kelas', 'Jenis Kelamin', 'Aksi'];
+        data = allPMData.filter(d => 
+            (d.nama_lengkap || '').toLowerCase().includes(search) ||
+            (d.nisn || '').includes(search)
+        );
+        renderFn = renderPMTable;
+    } else {
+        headers = ['No', 'Sekolah', 'NIK', 'Nama', 'Jabatan', 'Jenis Kelamin', 'Aksi'];
+        data = allGuruData.filter(d => 
+            (d.nama_lengkap || '').toLowerCase().includes(search) ||
+            (d.jabatan || '').toLowerCase().includes(search)
+        );
+        renderFn = renderGuruTable;
     }
 
-    renderDataTable(filtered);
+    renderTable(headers, data, renderFn);
 }
 
-// ============================================
-// EDIT / DELETE
-// ============================================
+function renderTable(headers, data, renderFn) {
+    const thead = document.getElementById('dataTableHead');
+    const tbody = document.getElementById('dataTableBody');
 
-function editData(id) {
-    const row = allData.find(d => d.id === id);
-    if (!row) return;
+    thead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
 
-    document.getElementById('modalTitle').textContent = 'Edit Data Sekolah';
-    document.getElementById('modalBody').innerHTML = `
-        <form id="editForm" onsubmit="saveEdit(event, ${id})">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Jenjang</label>
-                    <select id="edit_jenjang" required>
-                        <option value="TK" ${row.jenjang === 'TK' ? 'selected' : ''}>TK</option>
-                        <option value="SD" ${row.jenjang === 'SD' ? 'selected' : ''}>SD</option>
-                        <option value="SMP" ${row.jenjang === 'SMP' ? 'selected' : ''}>SMP</option>
-                        <option value="SMA" ${row.jenjang === 'SMA' ? 'selected' : ''}>SMA</option>
-                        <option value="SMK" ${row.jenjang === 'SMK' ? 'selected' : ''}>SMK</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Nama Sekolah</label>
-                    <input type="text" id="edit_nama_sekolah" value="${row.nama_sekolah}" required>
-                </div>
-                <div class="form-group">
-                    <label>NPSN</label>
-                    <input type="text" id="edit_npsn" value="${row.npsn}" maxlength="8" required>
-                </div>
-                <div class="form-group">
-                    <label>SPP Bulanan</label>
-                    <input type="number" id="edit_spp" value="${row.spp_bulanan}" required>
-                </div>
-                <div class="form-group">
-                    <label>Nama PIC</label>
-                    <input type="text" id="edit_nama_pic" value="${row.nama_pic}" required>
-                </div>
-                <div class="form-group">
-                    <label>Nomor HP</label>
-                    <input type="text" id="edit_nomor_hp" value="${row.nomor_hp}" required>
-                </div>
-                <div class="form-group full-width">
-                    <label>Alamat</label>
-                    <textarea id="edit_alamat" rows="2" required>${row.alamat_sekolah}</textarea>
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button>
-                <button type="submit" class="btn btn-primary"><i data-lucide="save"></i> Simpan</button>
-            </div>
-        </form>
-    `;
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="' + headers.length + '" class="empty-state"><i data-lucide="inbox"></i><p>Belum ada data</p></td></tr>';
+        lucide.createIcons();
+        return;
+    }
 
-    document.getElementById('modal').classList.add('show');
+    tbody.innerHTML = '';
+    data.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = renderFn(row, idx);
+        tbody.appendChild(tr);
+    });
+
     lucide.createIcons();
 }
 
-async function saveEdit(event, id) {
-    event.preventDefault();
-
-    try {
-        await updateSchool(id, {
-            jenjang: document.getElementById('edit_jenjang').value,
-            nama_sekolah: document.getElementById('edit_nama_sekolah').value,
-            npsn: document.getElementById('edit_npsn').value,
-            alamat_sekolah: document.getElementById('edit_alamat').value,
-            nama_pic: document.getElementById('edit_nama_pic').value,
-            nomor_hp: document.getElementById('edit_nomor_hp').value,
-            spp_bulanan: document.getElementById('edit_spp').value
-        });
-
-        showToast('Data berhasil diperbarui!', 'success');
-        closeModal();
-        loadData();
-    } catch (error) {
-        showToast('Gagal memperbarui data: ' + error.message, 'error');
-    }
+function renderSekolahTable(row, idx) {
+    return `
+        <td>${idx + 1}</td>
+        <td><span class="badge">${row.jenjang}</span></td>
+        <td><strong>${row.nama_sekolah}</strong></td>
+        <td>${row.nama_kepsek || '-'}</td>
+        <td><code>${row.npsn}</code></td>
+        <td>${row.alamat_sekolah}</td>
+        <td>${row.nama_pic}</td>
+        <td>${row.nomor_hp}</td>
+        <td>Rp ${parseInt(row.spp_bulanan).toLocaleString('id-ID')}</td>
+        <td>
+            <div class="action-btns">
+                <button class="btn-icon delete" title="Hapus" onclick="deleteSekolah(${row.id})">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </td>
+    `;
 }
 
-async function deleteData(id) {
-    if (!confirm('Yakin ingin menghapus data ini?')) return;
+function renderPMTable(row, idx) {
+    const namaSekolah = row.sekolah?.nama_sekolah || '-';
+    return `
+        <td>${idx + 1}</td>
+        <td>${namaSekolah}</td>
+        <td><code>${row.nik}</code></td>
+        <td>${row.nisn}</td>
+        <td>${row.nama_lengkap}</td>
+        <td>${row.kelas}</td>
+        <td>${row.jenis_kelamin}</td>
+        <td>
+            <div class="action-btns">
+                <button class="btn-icon delete" title="Hapus" onclick="deletePMData(${row.id})">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </td>
+    `;
+}
 
+function renderGuruTable(row, idx) {
+    const namaSekolah = row.sekolah?.nama_sekolah || '-';
+    return `
+        <td>${idx + 1}</td>
+        <td>${namaSekolah}</td>
+        <td><code>${row.nik}</code></td>
+        <td>${row.nama_lengkap}</td>
+        <td>${row.jabatan}</td>
+        <td>${row.jenis_kelamin}</td>
+        <td>
+            <div class="action-btns">
+                <button class="btn-icon delete" title="Hapus" onclick="deleteGuruData(${row.id})">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </td>
+    `;
+}
+
+async function deleteSekolah(id) {
+    if (!confirm('Yakin ingin menghapus data sekolah ini? Data MBG terkait juga akan terhapus!')) return;
     try {
         await deleteSchool(id);
-        showToast('Data berhasil dihapus', 'success');
-        loadData();
+        showToast('Data sekolah berhasil dihapus', 'success');
+        loadAllData();
     } catch (error) {
-        showToast('Gagal menghapus data: ' + error.message, 'error');
+        showToast('Gagal menghapus data', 'error');
     }
 }
 
-function closeModal(event) {
-    if (event && event.target !== event.currentTarget) return;
-    document.getElementById('modal').classList.remove('show');
+async function deletePMData(id) {
+    if (!confirm('Yakin ingin menghapus data ini?')) return;
+    try {
+        await deletePM(id);
+        showToast('Data PM berhasil dihapus', 'success');
+        loadAllData();
+    } catch (error) {
+        showToast('Gagal menghapus data', 'error');
+    }
+}
+
+async function deleteGuruData(id) {
+    if (!confirm('Yakin ingin menghapus data ini?')) return;
+    try {
+        await deleteGuru(id);
+        showToast('Data Guru berhasil dihapus', 'success');
+        loadAllData();
+    } catch (error) {
+        showToast('Gagal menghapus data', 'error');
+    }
 }
 
 // ============================================
 // EXPORT DATA
 // ============================================
 
-function exportData() {
-    if (!allData || allData.length === 0) {
+function exportCurrentData() {
+    let exportData = [];
+    let filename = '';
+
+    if (currentDataTab === 'sekolah') {
+        exportData = allSekolahData.map((d, i) => ({
+            'No': i + 1, 'Jenjang': d.jenjang, 'Nama Sekolah': d.nama_sekolah,
+            'Kepala Sekolah': d.nama_kepsek, 'NPSN': d.npsn, 'Alamat': d.alamat_sekolah,
+            'Nama PIC': d.nama_pic, 'No HP': d.nomor_hp, 'SPP': d.spp_bulanan
+        }));
+        filename = 'Export_Data_Sekolah';
+    } else if (currentDataTab === 'pm') {
+        exportData = allPMData.map((d, i) => ({
+            'No': i + 1, 'Sekolah': d.sekolah?.nama_sekolah, 'NIK': d.nik, 'NISN': d.nisn,
+            'Nama': d.nama_lengkap, 'Kelas': d.kelas, 'Jenis Kelamin': d.jenis_kelamin
+        }));
+        filename = 'Export_Data_PM';
+    } else {
+        exportData = allGuruData.map((d, i) => ({
+            'No': i + 1, 'Sekolah': d.sekolah?.nama_sekolah, 'NIK': d.nik,
+            'Nama': d.nama_lengkap, 'Jabatan': d.jabatan, 'Jenis Kelamin': d.jenis_kelamin
+        }));
+        filename = 'Export_Data_Guru';
+    }
+
+    if (exportData.length === 0) {
         showToast('Tidak ada data untuk diexport', 'error');
         return;
     }
 
-    const exportData = allData.map((d, i) => ({
-        'No': i + 1,
-        'Jenjang': d.jenjang,
-        'Nama Sekolah': d.nama_sekolah,
-        'NPSN': d.npsn,
-        'Alamat Sekolah': d.alamat_sekolah,
-        'Nama PIC': d.nama_pic,
-        'Nomor HP PIC': d.nomor_hp,
-        'SPP Bulanan': d.spp_bulanan
-    }));
-
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data Sekolah');
-    XLSX.writeFile(wb, `Export_Data_Sekolah_${new Date().toISOString().split('T')[0]}.xlsx`);
-
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
     showToast('Data berhasil diexport!', 'success');
 }
 
