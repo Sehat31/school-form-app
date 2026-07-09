@@ -52,7 +52,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0)" class="nav-link" data-page="tutorial" onclick="showPage('tutorial', event)">
+                    <a href="tutorial.html" class="nav-link">
                         <i data-lucide="book-open"></i>
                         Tutorial
                     </a>
@@ -378,6 +378,22 @@
                 <p>Lihat semua data sekolah dan MBG yang sudah tersimpan</p>
             </div>
 
+            <!-- Security Status Bar -->
+            <div class="security-bar" id="securityBar">
+                <div class="security-info">
+                    <i data-lucide="shield-check"></i>
+                    <span>Data sensitif (NIK & No HP) <strong>disensor otomatis</strong> untuk keamanan</span>
+                </div>
+                <div class="security-actions">
+                    <button class="btn btn-sm btn-primary" onclick="openPasswordModal('unlock')" id="unlockBtn">
+                        <i data-lucide="unlock"></i> Buka Sensor
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="lockAllData()" id="lockBtn" style="display:none;">
+                        <i data-lucide="lock"></i> Kunci Ulang
+                    </button>
+                </div>
+            </div>
+
             <!-- Tabs -->
             <div class="data-tabs">
                 <button class="tab-btn active" onclick="showDataTab('sekolah', event)">
@@ -421,7 +437,7 @@
                 <div class="filter-bar">
                     <div class="search-box">
                         <i data-lucide="search"></i>
-                        <input type="text" id="searchInput" placeholder="Cari data..." oninput="filterData()">
+                        <input type="text" id="searchInput" placeholder="Cari data (NIK, NPSN, Nama, dll)..." oninput="filterData()">
                     </div>
                     <button class="btn btn-outline btn-sm" onclick="loadAllData()">
                         <i data-lucide="refresh-cw"></i> Refresh
@@ -447,89 +463,19 @@
             </div>
         </section>
 
-        <!-- PAGE 4: TUTORIAL -->
+        <!-- PAGE 4: TUTORIAL (redirect ke tutorial.html) -->
         <section id="page-tutorial" class="page">
             <div class="page-header">
-                <h2><i data-lucide="book-open"></i> Tutorial Pengisian</h2>
-                <p>Panduan lengkap cara menggunakan Portal SPP Gjatian</p>
+                <h2><i data-lucide="book-open"></i> Tutorial</h2>
+                <p>Mengarahkan ke halaman tutorial...</p>
             </div>
-
-            <div class="tutorial-steps">
-                <div class="tutorial-card">
-                    <div class="step-number">1</div>
-                    <div class="tutorial-content">
-                        <h3>Isi Data Sekolah</h3>
-                        <p>Buka menu <strong>"Data Sekolah"</strong>, isi form dengan lengkap, lalu klik <strong>"Simpan & Lanjutkan ke MBG"</strong>.</p>
-                    </div>
-                </div>
-
-                <div class="tutorial-card">
-                    <div class="step-number">2</div>
-                    <div class="tutorial-content">
-                        <h3>Unduh Template MBG</h3>
-                        <p>Di menu <strong>"Data MBG"</strong>, klik <strong>"Unduh Template MBG"</strong> untuk mendapatkan file Excel dengan 2 sheet (PM dan Guru & Tendik).</p>
-                    </div>
-                </div>
-
-                <div class="tutorial-card">
-                    <div class="step-number">3</div>
-                    <div class="tutorial-content">
-                        <h3>Isi Template Excel</h3>
-                        <p>Buka file Excel, isi data di sheet <strong>PM</strong> untuk siswa dan sheet <strong>Guru & Tendik</strong> untuk guru. Jangan ubah header kolom.</p>
-                    </div>
-                </div>
-
-                <div class="tutorial-card">
-                    <div class="step-number">4</div>
-                    <div class="tutorial-content">
-                        <h3>Upload File Excel</h3>
-                        <p>Kembali ke menu <strong>"Data MBG"</strong>, pilih sekolah, lalu drag & drop file Excel. Preview data akan muncul sebelum disimpan.</p>
-                    </div>
-                </div>
-
-                <div class="tutorial-card">
-                    <div class="step-number">5</div>
-                    <div class="tutorial-content">
-                        <h3>Verifikasi Data</h3>
-                        <p>Buka menu <strong>"Data Tersimpan"</strong> untuk melihat semua data yang sudah masuk. Gunakan fitur search dan filter untuk mencari data.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-title">
-                    <i data-lucide="help-circle"></i>
-                    <h3>Pertanyaan Umum (FAQ)</h3>
-                </div>
-                <div class="faq-list">
-                    <div class="faq-item">
-                        <button class="faq-question" onclick="toggleFaq(this)">
-                            <span>Format file apa yang didukung?</span>
-                            <i data-lucide="chevron-down"></i>
-                        </button>
-                        <div class="faq-answer">
-                            <p>File yang didukung adalah format <strong>.xlsx</strong> dan <strong>.xls</strong> dengan ukuran maksimal 10MB.</p>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <button class="faq-question" onclick="toggleFaq(this)">
-                            <span>Apakah bisa mengisi langsung tanpa Excel?</span>
-                            <i data-lucide="chevron-down"></i>
-                        </button>
-                        <div class="faq-answer">
-                            <p>Untuk data sekolah bisa langsung via form. Untuk data MBG (Siswa & Guru) saat ini hanya via upload Excel.</p>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <button class="faq-question" onclick="toggleFaq(this)">
-                            <span>Bagaimana jika data salah input?</span>
-                            <i data-lucide="chevron-down"></i>
-                        </button>
-                        <div class="faq-answer">
-                            <p>Anda bisa mengedit atau menghapus data melalui menu <strong>"Data Tersimpan"</strong>, lalu klik ikon edit/hapus pada baris yang bersangkutan.</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="card" style="text-align:center; padding:60px 24px;">
+                <i data-lucide="book-open" style="width:64px;height:64px;color:var(--primary);margin-bottom:20px;"></i>
+                <h3>Halaman Tutorial</h3>
+                <p style="margin:16px 0;color:var(--text-light);">Klik tombol di bawah untuk membuka panduan lengkap</p>
+                <a href="tutorial.html" class="btn btn-primary">
+                    <i data-lucide="arrow-right"></i> Buka Tutorial
+                </a>
             </div>
         </section>
     </main>
@@ -540,7 +486,46 @@
         <span id="toastMessage"></span>
     </div>
 
-    <!-- MODAL -->
+    <!-- MODAL PASSWORD -->
+    <div id="passwordModal" class="modal-overlay" onclick="closePasswordModal(event)">
+        <div class="modal-content password-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="passwordModalTitle">
+                    <i data-lucide="shield-lock"></i> Verifikasi Keamanan
+                </h3>
+                <button class="btn-icon" onclick="closePasswordModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="password-info">
+                    <i data-lucide="info"></i>
+                    <p>Masukkan password untuk melihat data sensitif (NIK & No HP)</p>
+                </div>
+                <div class="password-input-group">
+                    <label for="passwordInput">Password:</label>
+                    <div class="password-field">
+                        <input type="password" id="passwordInput" placeholder="Masukkan password" 
+                               onkeypress="if(event.key==='Enter')checkPassword()">
+                        <button class="toggle-password" onclick="togglePasswordVisibility()">
+                            <i data-lucide="eye" id="passwordEyeIcon"></i>
+                        </button>
+                    </div>
+                    <p class="password-error" id="passwordError" style="display:none;">
+                        <i data-lucide="alert-circle"></i> Password salah! Coba lagi.
+                    </p>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-outline" onclick="closePasswordModal()">Batal</button>
+                    <button class="btn btn-primary" onclick="checkPassword()">
+                        <i data-lucide="unlock"></i> Verifikasi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT -->
     <div id="modal" class="modal-overlay" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
