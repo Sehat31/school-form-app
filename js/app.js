@@ -237,15 +237,15 @@ async function uploadMBGFile() {
             const pmRecords = parsedPMData.map(r => ({
                 sekolah_id: parseInt(sekolahId),
                 npsn: npsn,
-                nik: String(r['NIK (16 Digit)'] || r.NIK || ''),
-                nisn: String(r['NISN (10 Digit)'] || r.NISN || ''),
-                nama_lengkap: r['Nama Lengkap'] || '',
-                tempat_lahir: r['Tempat Lahir'] || '',
-                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || ''),
-                jenis_kelamin: r['Jenis Kelamin'] || '',
-                nama_orang_tua: r['Nama Orang Tua/Wali'] || '',
-                kelas: String(r['Kelas'] || ''),
-                keterangan: r['Keterangan'] || ''
+                nik: String(r['NIK (16 Digit)'] || r.NIK || r['NIK'] || ''),
+                nisn: String(r['NISN (10 Digit)'] || r.NISN || r['NISN'] || ''),
+                nama_lengkap: r['Nama Lengkap'] || r['NAMA LENGKAP'] || '',
+                tempat_lahir: r['Tempat Lahir'] || r['TEMPAT LAHIR'] || '',
+                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || r['TANGGAL LAHIR'] || ''),
+                jenis_kelamin: r['Jenis Kelamin'] || r['JENIS KELAMIN'] || '',
+                nama_orang_tua: r['Nama Orang Tua/Wali'] || r['NAMA ORANG TUA/WALI'] || '',
+                kelas: String(r['Kelas'] || r['KELAS'] || ''),
+                keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
             }));
             await insertBulkPM(pmRecords);
         }
@@ -255,13 +255,13 @@ async function uploadMBGFile() {
             const guruRecords = parsedGuruData.map(r => ({
                 sekolah_id: parseInt(sekolahId),
                 npsn: npsn,
-                nik: String(r['NIK (16 Digit)'] || r.NIK || ''),
-                nama_lengkap: r['Nama Lengkap'] || '',
-                tempat_lahir: r['Tempat Lahir'] || '',
-                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || ''),
-                jenis_kelamin: r['Jenis Kelamin'] || '',
-                jabatan: r['Jabatan'] || '',
-                keterangan: r['Keterangan'] || ''
+                nik: String(r['NIK (16 Digit)'] || r.NIK || r['NIK'] || ''),
+                nama_lengkap: r['Nama Lengkap'] || r['NAMA LENGKAP'] || '',
+                tempat_lahir: r['Tempat Lahir'] || r['TEMPAT LAHIR'] || '',
+                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || r['TANGGAL LAHIR'] || ''),
+                jenis_kelamin: r['Jenis Kelamin'] || r['JENIS KELAMIN'] || '',
+                jabatan: r['Jabatan'] || r['JABATAN'] || '',
+                keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
             }));
             await insertBulkGuru(guruRecords);
         }
@@ -281,11 +281,27 @@ async function uploadMBGFile() {
 
 function parseTanggalLahir(tanggal) {
     if (!tanggal) return null;
+    
+    // Jika sudah Date object dari Excel
+    if (tanggal instanceof Date) {
+        const year = tanggal.getFullYear();
+        const month = String(tanggal.getMonth() + 1).padStart(2, '0');
+        const day = String(tanggal.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
     // Format: dd-mm-yyyy
     const parts = String(tanggal).split('-');
     if (parts.length === 3) {
-        return `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to yyyy-mm-dd
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
+    
+    // Format: dd/mm/yyyy
+    const parts2 = String(tanggal).split('/');
+    if (parts2.length === 3) {
+        return `${parts2[2]}-${parts2[1]}-${parts2[0]}`;
+    }
+    
     return tanggal;
 }
 
@@ -350,11 +366,13 @@ async function deleteUploadedFile(path) {
 // DATA TABLE
 // ============================================
 
-function showDataTab(tab) {
+function showDataTab(tab, event) {
+    if (event) event.preventDefault();
     currentDataTab = tab;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     if (event && event.target) {
-        event.target.closest('.tab-btn').classList.add('active');
+        const tabBtn = event.target.closest('.tab-btn');
+        if (tabBtn) tabBtn.classList.add('active');
     }
     filterData();
 }
@@ -373,9 +391,13 @@ async function loadAllData() {
 }
 
 function updateStats() {
-    document.getElementById('totalSekolah').textContent = allSekolahData.length;
-    document.getElementById('totalPM').textContent = allPMData.length;
-    document.getElementById('totalGuru').textContent = allGuruData.length;
+    const elSekolah = document.getElementById('totalSekolah');
+    const elPM = document.getElementById('totalPM');
+    const elGuru = document.getElementById('totalGuru');
+    
+    if (elSekolah) elSekolah.textContent = allSekolahData.length;
+    if (elPM) elPM.textContent = allPMData.length;
+    if (elGuru) elGuru.textContent = allGuruData.length;
 }
 
 function filterData() {
