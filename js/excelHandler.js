@@ -72,7 +72,7 @@ function handleDrop(event) {
 }
 
 /**
- * Process MBG Excel file
+ * Process MBG Excel file - supports multiple sheet name formats
  */
 function processMBGFile(file) {
     // Validate file type
@@ -103,29 +103,63 @@ function processMBGFile(file) {
     reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+            console.log('Sheet names:', workbook.SheetNames);
+
+            // Find PM sheet (flexible matching)
+            let pmSheetName = null;
+            for (const name of workbook.SheetNames) {
+                const lower = name.toLowerCase();
+                if (lower.includes('pm') || lower.includes('penerima') || lower.includes('siswa')) {
+                    pmSheetName = name;
+                    break;
+                }
+            }
+
+            // Find Guru sheet (flexible matching)
+            let guruSheetName = null;
+            for (const name of workbook.SheetNames) {
+                const lower = name.toLowerCase();
+                if (lower.includes('guru') || lower.includes('tendik')) {
+                    guruSheetName = name;
+                    break;
+                }
+            }
 
             // Parse PM sheet
-            if (workbook.SheetNames.includes('PM (Penerima Manfaat)')) {
-                const pmSheet = workbook.Sheets['PM (Penerima Manfaat)'];
-                const pmJson = XLSX.utils.sheet_to_json(pmSheet);
+            if (pmSheetName) {
+                const pmSheet = workbook.Sheets[pmSheetName];
+                const pmJson = XLSX.utils.sheet_to_json(pmSheet, { raw: false, dateNF: 'dd-mm-yyyy' });
                 parsedPMData = pmJson;
                 renderPMPreview(pmJson);
+                console.log('PM data:', pmJson.length, 'rows');
+            } else {
+                console.warn('PM sheet not found');
+                parsedPMData = [];
             }
 
             // Parse Guru sheet
-            if (workbook.SheetNames.includes('Guru & Tendik')) {
-                const guruSheet = workbook.Sheets['Guru & Tendik'];
-                const guruJson = XLSX.utils.sheet_to_json(guruSheet);
+            if (guruSheetName) {
+                const guruSheet = workbook.Sheets[guruSheetName];
+                const guruJson = XLSX.utils.sheet_to_json(guruSheet, { raw: false, dateNF: 'dd-mm-yyyy' });
                 parsedGuruData = guruJson;
                 renderGuruPreview(guruJson);
+                console.log('Guru data:', guruJson.length, 'rows');
+            } else {
+                console.warn('Guru sheet not found');
+                parsedGuruData = [];
             }
 
             const totalRows = parsedPMData.length + parsedGuruData.length;
-            showToast(`File berhasil dibaca: ${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik`, 'success');
+            if (totalRows === 0) {
+                showToast('File tidak berisi data. Pastikan sheet bernama "PM" dan "Guru & Tendik"', 'error');
+            } else {
+                showToast(`File berhasil dibaca: ${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik`, 'success');
+            }
         } catch (err) {
-            showToast('Gagal membaca file Excel!', 'error');
-            console.error(err);
+            console.error('Error parsing Excel:', err);
+            showToast('Gagal membaca file Excel: ' + err.message, 'error');
         }
     };
     reader.readAsArrayBuffer(file);
