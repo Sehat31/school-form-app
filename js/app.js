@@ -1001,7 +1001,7 @@ function renderGuruTable(row, idx) {
 }
 
 function showUnlockWarning() {
-    showToast(' Masukkan password 2024 untuk membuka sensor sebelum menghapus data!', 'error');
+    showToast(' Masukkan password untuk membuka sensor sebelum menghapus data!', 'error');
     openPasswordModal('unlock');
 }
 
