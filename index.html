@@ -17,7 +17,13 @@
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+    <body>
+    <!-- Script untuk clean URL -->
+    <script>
+        if (window.location.pathname === '/index.html') {
+            window.history.replaceState({}, document.title, '/');
+        }
+    </script>
 
     <!-- HEADER -->
     <header class="header">
@@ -77,7 +83,7 @@
     <!-- 🚨 RUNNING TEXT MAINTENANCE (TAMBAHKAN DI SINI) 🚨 -->
     <div class="maintenance-banner">
         <div class="maintenance-text">
-            ⚠️ Maaf terjadi Maintenance dan kehilangan beberapa data. Kami coba memulihkan namun tidak bisa, mohon isi kembali data sekolah masing-masing. Tidak Termasuk SDN Jatian 01 & SDN Pakusari 01 yang datanya bisa kami pulihkan.
+            ⚠️ Mohon maaf, sedang terjadi maintenance yang menyebabkan sebagian data sekolah hilang dan tidak dapat dipulihkan. Oleh karena itu, kami mohon Bapak/Ibu untuk mengisi kembali data sekolah masing-masing. **Pengecualian untuk SDN Jatian 01 dan SDN Pakusari 01**, karena data kedua sekolah tersebut berhasil kami pulihkan sehingga tidak perlu mengisi ulang.
         </div>
     </div>
     <!-- ========================================== -->
