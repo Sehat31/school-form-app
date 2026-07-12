@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================
-//  SECURITY FUNCTIONS
+// 🔒 SECURITY FUNCTIONS
 // ============================================
 
 function maskNIK(nik) {
@@ -258,7 +258,6 @@ async function handleSubmit(event) {
             spp_bulanan: document.getElementById('spp_bulanan').value.replace(/\./g, '')
         };
 
-        // 🔍 CEK NPSN DUPLIKAT SEBELUM SIMPAN
         const npsn = formData.npsn;
         console.log('Mengecek NPSN:', npsn);
         
@@ -418,8 +417,9 @@ async function uploadMBGFile() {
     try {
         const selectedOption = selectNpsn.options[selectNpsn.selectedIndex];
         const sekolahId = selectedOption.dataset.sekolahId;
+        const sekolahName = selectedOption.textContent.split(' - ')[1] || 'Sekolah';
 
-        // 🔍 CEK NIK DUPLIKAT DI SEKOLAH LAIN (Cross-School Check)
+        // 🔍 CEK NIK DUPLIKAT DI SEKOLAH LAIN
         const allNIKsToUpload = [];
         parsedPMData.forEach(r => {
             const nik = String(r['NIK (16 Digit)'] || r.NIK || '').trim();
@@ -431,7 +431,6 @@ async function uploadMBGFile() {
         });
 
         if (allNIKsToUpload.length > 0) {
-            // Cek di tabel PM
             const { data: existingPM, error: pmError } = await db
                 .from('pm_mbg')
                 .select('nik, sekolah_id')
@@ -439,7 +438,6 @@ async function uploadMBGFile() {
 
             if (pmError) console.error('Error cek PM:', pmError);
 
-            // Cek di tabel Guru
             const { data: existingGuru, error: guruError } = await db
                 .from('guru_tendik')
                 .select('nik, sekolah_id')
@@ -447,10 +445,7 @@ async function uploadMBGFile() {
 
             if (guruError) console.error('Error cek Guru:', guruError);
 
-            // Gabungkan hasil
             const allExisting = [...(existingPM || []), ...(existingGuru || [])];
-            
-            // Filter yang ada di sekolah LAIN
             const crossSchoolDuplicates = allExisting.filter(item => 
                 String(item.sekolah_id) !== String(sekolahId)
             );
@@ -466,13 +461,18 @@ async function uploadMBGFile() {
             }
         }
 
-        // Upload file to storage
-        await uploadFileToStorage(selectedFile);
+        // Upload file to storage DENGAN METADATA
+        const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        await uploadFileToStorageWithMetadata(selectedFile, {
+            npsn: npsn,
+            sekolah_id: sekolahId,
+            sekolah_nama: sekolahName,
+            uploaded_at: new Date().toISOString()
+        }, fileName);
 
         // Insert PM data dengan MAPPING YANG DIPERBAIKI
         if (parsedPMData.length > 0) {
             const pmRecords = parsedPMData.map(r => {
-                // Mapping yang lebih fleksibel untuk berbagai variasi nama kolom
                 const namaLengkap = r['NAMA LENGKAP (Sesuai Akta/KTP)'] || 
                                    r['NAMA LENGKAP'] || 
                                    r['Nama Lengkap'] || 
@@ -641,32 +641,70 @@ async function loadUploadedFiles() {
             return;
         }
 
-        container.innerHTML = files.map(file => `
-            <div class="file-item">
-                <i data-lucide="file-spreadsheet"></i>
-                <div class="file-item-info">
-                    <p class="file-item-name">${file.name}</p>
-                    <p class="file-item-meta">${formatFileSize(file.metadata?.size || 0)}</p>
+        // Ambil data sekolah untuk mapping nama
+        const schools = await getAllSchools();
+        const schoolMap = {};
+        schools.forEach(s => {
+            schoolMap[s.npsn] = s.nama_sekolah;
+        });
+
+        container.innerHTML = files.map(file => {
+            const npsn = file.metadata?.npsn || extractNPSNFromPath(file.path);
+            const schoolName = schoolMap[npsn] || 'Sekolah Tidak Dikenal';
+            const uploadedDate = file.metadata?.uploaded_at ? 
+                new Date(file.metadata.uploaded_at).toLocaleDateString('id-ID') : 
+                'Tanggal tidak diketahui';
+            
+            const displayName = `${schoolName} - ${uploadedDate}.xlsx`;
+            
+            const downloadBtn = sensitiveDataUnlocked ? `
+                <a href="${getFileUrl('excels/' + file.name)}" target="_blank" class="btn-icon" title="Download">
+                    <i data-lucide="download"></i>
+                </a>
+            ` : `
+                <button class="btn-icon" title="🔒 Buka sensor dulu untuk download" onclick="showUnlockWarning()">
+                    <i data-lucide="lock"></i>
+                </button>
+            `;
+
+            return `
+                <div class="file-item">
+                    <i data-lucide="file-spreadsheet"></i>
+                    <div class="file-item-info">
+                        <p class="file-item-name">${displayName}</p>
+                        <p class="file-item-meta">${formatFileSize(file.metadata?.size || 0)}</p>
+                        <p class="file-item-meta" style="font-size: 0.75rem; color: var(--text-light);">
+                            Sekolah: ${schoolName}
+                        </p>
+                    </div>
+                    <div class="file-item-actions">
+                        ${downloadBtn}
+                        <button class="btn-icon" title="Hapus" onclick="deleteUploadedFile('excels/${file.name}')">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="file-item-actions">
-                    <a href="${getFileUrl('excels/' + file.name)}" target="_blank" class="btn-icon" title="Download">
-                        <i data-lucide="download"></i>
-                    </a>
-                    <button class="btn-icon" title="Hapus" onclick="deleteUploadedFile('excels/${file.name}')">
-                        <i data-lucide="trash-2"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         lucide.createIcons();
     } catch (error) {
+        console.error('Error loading files:', error);
         container.innerHTML = `<div class="loading-placeholder"><i data-lucide="alert-circle"></i><p>Gagal memuat file</p></div>`;
         lucide.createIcons();
     }
 }
 
+function extractNPSNFromPath(path) {
+    return null;
+}
+
 async function deleteUploadedFile(path) {
+    if (!sensitiveDataUnlocked) {
+        showUnlockWarning();
+        return;
+    }
+    
     if (!confirm('Yakin ingin menghapus file ini?')) return;
 
     try {
@@ -807,7 +845,6 @@ function renderTable(headers, data, renderFn) {
 function renderSekolahTable(row, idx) {
     const nomorHP = renderSensitiveData(row.nomor_hp, 'phone', row.id);
     
-    // 🔒 Tombol hapus hanya aktif jika sudah unlock
     const deleteBtn = sensitiveDataUnlocked 
         ? `<button class="btn-icon delete" title="Hapus" onclick="deleteSekolah(${row.id})">
              <i data-lucide="trash-2"></i>
@@ -839,12 +876,11 @@ function renderPMTable(row, idx) {
     const nik = renderSensitiveData(row.nik, 'nik', row.id);
     const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
     
-    // 🔒 Tombol hapus hanya aktif jika sudah unlock
     const deleteBtn = sensitiveDataUnlocked 
         ? `<button class="btn-icon delete" title="Hapus" onclick="deletePMData(${row.id})">
              <i data-lucide="trash-2"></i>
            </button>`
-        : `<button class="btn-icon delete" title=" Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
+        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
              <i data-lucide="lock"></i>
            </button>`;
     
@@ -872,12 +908,11 @@ function renderGuruTable(row, idx) {
     const nik = renderSensitiveData(row.nik, 'nik', row.id);
     const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
     
-    // 🔒 Tombol hapus hanya aktif jika sudah unlock
     const deleteBtn = sensitiveDataUnlocked 
         ? `<button class="btn-icon delete" title="Hapus" onclick="deleteGuruData(${row.id})">
              <i data-lucide="trash-2"></i>
            </button>`
-        : `<button class="btn-icon delete" title=" Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
+        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
              <i data-lucide="lock"></i>
            </button>`;
     
@@ -898,11 +933,8 @@ function renderGuruTable(row, idx) {
     `;
 }
 
-/**
- * Tampilkan warning jika mencoba hapus tanpa unlock
- */
 function showUnlockWarning() {
-    showToast('🔒 Masukkan password 2024 untuk membuka sensor sebelum menghapus data!', 'error');
+    showToast(' Masukkan password 2024 untuk membuka sensor sebelum menghapus data!', 'error');
     openPasswordModal('unlock');
 }
 
@@ -916,7 +948,6 @@ function formatDate(dateStr) {
 }
 
 async function deleteSekolah(id) {
-    // 🔒 Cek apakah sudah unlock
     if (!sensitiveDataUnlocked) {
         showUnlockWarning();
         return;
@@ -927,7 +958,6 @@ async function deleteSekolah(id) {
         await deleteSchool(id);
         showToast('Data sekolah berhasil dihapus', 'success');
         
-        // Hapus dari array lokal agar tabel langsung update
         allSekolahData = allSekolahData.filter(d => d.id !== id);
         updateStats();
         filterData();
@@ -937,7 +967,6 @@ async function deleteSekolah(id) {
 }
 
 async function deletePMData(id) {
-    // 🔒 Cek apakah sudah unlock
     if (!sensitiveDataUnlocked) {
         showUnlockWarning();
         return;
@@ -948,7 +977,6 @@ async function deletePMData(id) {
         await deletePM(id);
         showToast('Data PM berhasil dihapus', 'success');
         
-        // Hapus dari array lokal agar tabel langsung update
         allPMData = allPMData.filter(d => d.id !== id);
         updateStats();
         filterData();
@@ -958,7 +986,6 @@ async function deletePMData(id) {
 }
 
 async function deleteGuruData(id) {
-    // 🔒 Cek apakah sudah unlock
     if (!sensitiveDataUnlocked) {
         showUnlockWarning();
         return;
@@ -969,7 +996,6 @@ async function deleteGuruData(id) {
         await deleteGuru(id);
         showToast('Data Guru berhasil dihapus', 'success');
         
-        // Hapus dari array lokal agar tabel langsung update
         allGuruData = allGuruData.filter(d => d.id !== id);
         updateStats();
         filterData();
