@@ -603,9 +603,9 @@ async function uploadMBGFile() {
 function parseTanggalLahir(tanggal) {
     if (!tanggal) return null;
     
-    // Jika sudah Date object dari Excel
+    // Jika sudah Date object dari ExcelJS
     if (tanggal instanceof Date) {
-        if (isNaN(tanggal.getTime())) return null; // Invalid date
+        if (isNaN(tanggal.getTime())) return null;
         const year = tanggal.getFullYear();
         const month = String(tanggal.getMonth() + 1).padStart(2, '0');
         const day = String(tanggal.getDate()).padStart(2, '0');
@@ -618,24 +618,43 @@ function parseTanggalLahir(tanggal) {
     let parts = str.split(/[-\/]/);
     
     if (parts.length === 3) {
-        let [dd, mm, yy] = parts;
+        let [part1, part2, part3] = parts;
+        let day, month, year;
         
-        // Pad single digit (contoh: 5 → 05)
-        dd = dd.padStart(2, '0');
-        mm = mm.padStart(2, '0');
-        
-        // Convert YY ke YYYY
-        let year = parseInt(yy);
-        if (year < 100) {
-            // Asumsi: 00-30 = 2000-2030, 31-99 = 1931-1999
-            year = year > 30 ? 1900 + year : 2000 + year;
+        // Deteksi format berdasarkan panjang digit
+        if (part1.length === 4) {
+            // Format YYYY-MM-DD atau YYYY/MM/DD
+            year = parseInt(part1);
+            month = parseInt(part2);
+            day = parseInt(part3);
+        } else if (part3.length === 4) {
+            // Format DD-MM-YYYY atau DD/MM/YYYY
+            day = parseInt(part1);
+            month = parseInt(part2);
+            year = parseInt(part3);
+        } else {
+            // Format DD-MM-YY atau DD/MM/YY
+            day = parseInt(part1);
+            month = parseInt(part2);
+            year = parseInt(part3);
+            
+            // Convert YY ke YYYY
+            if (year < 100) {
+                year = year > 30 ? 1900 + year : 2000 + year;
+            }
         }
         
-        // Validasi tanggal
-        const date = new Date(year, parseInt(mm) - 1, parseInt(dd));
-        if (isNaN(date.getTime())) return null;
+        // Validasi
+        if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 2100) {
+            console.warn('Tanggal tidak valid:', str);
+            return null;
+        }
         
-        return `${year}-${mm}-${dd}`;
+        // Pad dengan leading zero
+        const monthStr = String(month).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        
+        return `${year}-${monthStr}-${dayStr}`;
     }
     
     // Jika sudah format YYYY-MM-DD (ISO)
@@ -643,6 +662,7 @@ function parseTanggalLahir(tanggal) {
         return str;
     }
     
+    console.warn('Format tanggal tidak dikenali:', str);
     return null;
 }
 
