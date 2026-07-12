@@ -461,10 +461,10 @@ async function uploadMBGFile() {
             }
         }
 
-       // Upload file to storage DENGAN METADATA + TIMESTAMP
-                const now = new Date();
-                const timestamp = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-                const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${now.toISOString().split('T')[0]}_${timestamp}.xlsx`;
+        // Upload file to storage DENGAN METADATA + TIMESTAMP
+        const now = new Date();
+        const timestamp = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+        const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${now.toISOString().split('T')[0]}_${timestamp}.xlsx`;
         await uploadFileToStorageWithMetadata(selectedFile, {
             npsn: npsn,
             sekolah_id: sekolahId,
@@ -600,6 +600,10 @@ async function uploadMBGFile() {
     }
 }
 
+// ============================================
+// 🆕 PARSE TANGGAL LAHIR (DIPERBAIKI)
+// ============================================
+
 function parseTanggalLahir(tanggal) {
     if (!tanggal) return null;
     
@@ -613,102 +617,39 @@ function parseTanggalLahir(tanggal) {
     }
     
     const str = String(tanggal).trim();
-    
-    // Split dengan - atau /
-    let parts = str.split(/[-\/]/);
+    const parts = str.split(/[-\/]/);
     
     if (parts.length === 3) {
-        let [p1, p2, p3] = parts.map(p => p.trim());
+        let p1 = parseInt(parts[0]);
+        let p2 = parseInt(parts[1]);
+        let p3 = parseInt(parts[2]);
         let day, month, year;
         
-        // === KASUS 1: YYYY di depan ===
-        if (p1.length === 4) {
-            // Format: YYYY-MM-DD
-            year = parseInt(p1);
-            month = parseInt(p2);
-            day = parseInt(p3);
-        } 
-        // === KASUS 2: YYYY di belakang ===
-        else if (p3.length === 4) {
-            year = parseInt(p3);
-            
-            // Deteksi format DD/MM/YYYY vs MM/DD/YYYY
-            // Jika p2 > 12, pasti p2 adalah tanggal (format MM/DD/YYYY)
-            if (parseInt(p2) > 12) {
-                // Format MM/DD/YYYY (Amerika)
-                month = parseInt(p1);
-                day = parseInt(p2);
-            } else if (parseInt(p1) > 12) {
-                // Format DD/MM/YYYY (Indonesia)
-                day = parseInt(p1);
-                month = parseInt(p2);
-            } else {
-                // Keduanya <= 12, asumsikan DD/MM/YYYY (Indonesia)
-                day = parseInt(p1);
-                month = parseInt(p2);
-            }
-        } 
-        // === KASUS 3: YY di belakang (2 digit) ===
-        else if (p3.length <= 2) {
-            // Konversi YY ke YYYY
-            year = parseInt(p3);
-            year = year > 30 ? 1900 + year : 2000 + year;
-            
-            // Deteksi format DD/MM/YY vs MM/DD/YY
-            if (parseInt(p2) > 12) {
-                // Format MM/DD/YY (Amerika)
-                month = parseInt(p1);
-                day = parseInt(p2);
-            } else if (parseInt(p1) > 12) {
-                // Format DD/MM/YY (Indonesia)
-                day = parseInt(p1);
-                month = parseInt(p2);
-            } else {
-                // Keduanya <= 12, asumsikan DD/MM/YY (Indonesia)
-                day = parseInt(p1);
-                month = parseInt(p2);
-            }
+        // Deteksi format otomatis
+        if (parts[0].length === 4) {
+            // Format YYYY-MM-DD
+            year = p1; month = p2; day = p3;
+        } else if (parts[2].length === 4) {
+            // Format DD/MM/YYYY atau MM/DD/YYYY
+            year = p3;
+            if (p2 > 12) { month = p1; day = p2; } 
+            else if (p1 > 12) { day = p1; month = p2; } 
+            else { day = p1; month = p2; } // Default Indonesia
         } else {
-            console.warn('Format tanggal tidak dikenali:', str);
-            return null;
+            // Format DD/MM/YY atau MM/DD/YY
+            year = p3 > 30 ? 1900 + p3 : 2000 + p3;
+            if (p2 > 12) { month = p1; day = p2; } 
+            else if (p1 > 12) { day = p1; month = p2; } 
+            else { day = p1; month = p2; } // Default Indonesia
         }
         
-        // Validasi
-        if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 2100) {
+        // Validasi dasar
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
             console.warn('Tanggal tidak valid:', str);
             return null;
         }
         
-        // Validasi tanggal real (misal 30 Feb tidak valid)
-        const testDate = new Date(year, month - 1, day);
-        if (testDate.getFullYear() !== year || 
-            testDate.getMonth() !== month - 1 || 
-            testDate.getDate() !== day) {
-            console.warn('Tanggal tidak ada di kalender:', str);
-            return null;
-        }
-        
-        // Format output: YYYY-MM-DD
-        const monthStr = String(month).padStart(2, '0');
-        const dayStr = String(day).padStart(2, '0');
-        
-        return `${year}-${monthStr}-${dayStr}`;
-    }
-    
-    // Jika sudah format YYYY-MM-DD (ISO)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        return str;
-    }
-    
-    console.warn('Format tanggal tidak dikenali:', str);
-    return null;
-}
-        
-        // Pad dengan leading zero
-        const monthStr = String(month).padStart(2, '0');
-        const dayStr = String(day).padStart(2, '0');
-        
-        return `${year}-${monthStr}-${dayStr}`;
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
     
     // Jika sudah format YYYY-MM-DD (ISO)
