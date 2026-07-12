@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rute Distribusi - Portal SPPG Jatian</title>
     
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
     
@@ -16,7 +15,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="logo">
@@ -29,15 +27,12 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="distribusi-main">
-        <!-- Security Notice -->
         <div class="security-notice" id="securityNotice">
             <i data-lucide="lock"></i>
             <span>Mode Baca Saja - <button onclick="unlockDistribusi()" class="btn-link">Klik untuk Edit</button></span>
         </div>
 
-        <!-- Summary Cards -->
         <div class="summary-grid">
             <div class="summary-card jalur-selatan">
                 <div class="summary-header">
@@ -45,21 +40,25 @@
                     <h3>Jalur Selatan</h3>
                 </div>
                 <div class="summary-stats">
-                    <div class="summary-item">
-                        <span class="summary-label">Total Sekolah</span>
-                        <span class="summary-value" id="count-selatan">0</span>
+                    <div class="summary-row">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Sekolah</span>
+                            <span class="summary-value" id="count-selatan">0</span>
+                        </div>
+                        <div class="summary-item pk">
+                            <span class="summary-label">Total PK</span>
+                            <span class="summary-value" id="total-selatan-pk">0</span>
+                        </div>
                     </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Total PK</span>
-                        <span class="summary-value pk" id="total-selatan-pk">0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Total PB</span>
-                        <span class="summary-value pb" id="total-selatan-pb">0</span>
-                    </div>
-                    <div class="summary-item grand">
-                        <span class="summary-label">Grand Total</span>
-                        <span class="summary-value" id="total-selatan">0</span>
+                    <div class="summary-row">
+                        <div class="summary-item pb">
+                            <span class="summary-label">Total PB</span>
+                            <span class="summary-value" id="total-selatan-pb">0</span>
+                        </div>
+                        <div class="summary-item grand">
+                            <span class="summary-label">Grand Total</span>
+                            <span class="summary-value" id="total-selatan">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -70,29 +69,31 @@
                     <h3>Jalur Utara</h3>
                 </div>
                 <div class="summary-stats">
-                    <div class="summary-item">
-                        <span class="summary-label">Total Sekolah</span>
-                        <span class="summary-value" id="count-utara">0</span>
+                    <div class="summary-row">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Sekolah</span>
+                            <span class="summary-value" id="count-utara">0</span>
+                        </div>
+                        <div class="summary-item pk">
+                            <span class="summary-label">Total PK</span>
+                            <span class="summary-value" id="total-utara-pk">0</span>
+                        </div>
                     </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Total PK</span>
-                        <span class="summary-value pk" id="total-utara-pk">0</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Total PB</span>
-                        <span class="summary-value pb" id="total-utara-pb">0</span>
-                    </div>
-                    <div class="summary-item grand">
-                        <span class="summary-label">Grand Total</span>
-                        <span class="summary-value" id="total-utara">0</span>
+                    <div class="summary-row">
+                        <div class="summary-item pb">
+                            <span class="summary-label">Total PB</span>
+                            <span class="summary-value" id="total-utara-pb">0</span>
+                        </div>
+                        <div class="summary-item grand">
+                            <span class="summary-label">Grand Total</span>
+                            <span class="summary-value" id="total-utara">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Distribution Lists -->
         <div class="distribution-grid">
-            <!-- Jalur Selatan -->
             <div class="distribution-panel">
                 <div class="panel-header">
                     <h3><i data-lucide="truck"></i> DISTRIBUSI JALUR SELATAN</h3>
@@ -103,10 +104,10 @@
                 <div class="table-header">
                     <span style="width: 30px;"></span>
                     <span>SEKOLAH</span>
-                    <span style="width: 80px;">PK</span>
-                    <span style="width: 80px;">PB</span>
-                    <span style="width: 70px;">TOTAL</span>
-                    <span style="width: 40px;"></span>
+                    <span style="width: 70px;">PK</span>
+                    <span style="width: 70px;">PB</span>
+                    <span style="width: 60px;">TOTAL</span>
+                    <span style="width: 35px;"></span>
                 </div>
                 <div class="sekolah-list" id="list-selatan" ondrop="drop(event, 'Selatan')" ondragover="allowDrop(event)">
                     <div class="loading-placeholder">
@@ -116,7 +117,6 @@
                 </div>
             </div>
 
-            <!-- Jalur Utara -->
             <div class="distribution-panel">
                 <div class="panel-header">
                     <h3><i data-lucide="truck"></i> DISTRIBUSI JALUR UTARA</h3>
@@ -127,10 +127,10 @@
                 <div class="table-header">
                     <span style="width: 30px;"></span>
                     <span>SEKOLAH</span>
-                    <span style="width: 80px;">PK</span>
-                    <span style="width: 80px;">PB</span>
-                    <span style="width: 70px;">TOTAL</span>
-                    <span style="width: 40px;"></span>
+                    <span style="width: 70px;">PK</span>
+                    <span style="width: 70px;">PB</span>
+                    <span style="width: 60px;">TOTAL</span>
+                    <span style="width: 35px;"></span>
                 </div>
                 <div class="sekolah-list" id="list-utara" ondrop="drop(event, 'Utara')" ondragover="allowDrop(event)">
                     <div class="loading-placeholder">
@@ -141,7 +141,6 @@
             </div>
         </div>
 
-        <!-- Sekolah Belum Masuk Distribusi -->
         <div class="card">
             <div class="section-title">
                 <i data-lucide="folder-plus"></i>
@@ -156,7 +155,6 @@
             </div>
         </div>
 
-        <!-- Grand Total -->
         <div class="grand-total-section">
             <h2><i data-lucide="bar-chart-3"></i> TOTAL KESELURUHAN</h2>
             <div class="grand-total-stats">
@@ -176,7 +174,6 @@
         </div>
     </main>
 
-    <!-- Modal Password -->
     <div id="passwordModal" class="modal-overlay" onclick="closePasswordModal(event)">
         <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -204,7 +201,6 @@
         </div>
     </div>
 
-    <!-- Modal Tambah Sekolah -->
     <div id="addSekolahModal" class="modal-overlay" onclick="closeAddSekolahModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -230,7 +226,6 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast">
         <i data-lucide="check-circle" id="toastIcon"></i>
         <span id="toastMessage"></span>
