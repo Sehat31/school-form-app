@@ -5,6 +5,7 @@
 let allSekolahData = [];
 let distribusiData = [];
 let draggedElement = null;
+let currentJalur = '';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -174,9 +175,11 @@ function createSekolahItemBelum(sekolah) {
 
 // Drag and Drop Functions
 function drag(event) {
-    draggedElement = event.target;
-    event.dataTransfer.setData('text/plain', event.target.dataset.sekolahId);
-    event.target.classList.add('dragging');
+    draggedElement = event.target.closest('.sekolah-item');
+    if (draggedElement) {
+        event.dataTransfer.setData('text/plain', draggedElement.dataset.sekolahId);
+        draggedElement.classList.add('dragging');
+    }
 }
 
 function allowDrop(event) {
@@ -185,6 +188,7 @@ function allowDrop(event) {
 
 async function drop(event, jalur) {
     event.preventDefault();
+    
     const sekolahId = parseInt(event.dataTransfer.getData('text/plain'));
     
     if (draggedElement) {
@@ -254,7 +258,6 @@ async function tambahKeDistribusi(sekolahId) {
     const sekolah = allSekolahData.find(s => s.id === sekolahId);
     if (!sekolah) return;
 
-    // Tampilkan pilihan jalur
     const jalur = prompt(`Pilih jalur untuk ${sekolah.nama_sekolah}:\n1. Selatan\n2. Utara\n\nKetik 1 atau 2:`);
     
     if (!jalur || (jalur !== '1' && jalur !== '2')) {
@@ -289,9 +292,6 @@ async function tambahKeDistribusi(sekolahId) {
 
 // Hitung total
 function calculateTotal() {
-    const itemsSelatan = document.querySelectorAll('#list-selatan .input-pk, #list-selatan .input-pb');
-    const itemsUtara = document.querySelectorAll('#list-utara .input-pk, #list-utara .input-pb');
-
     let totalSelatanPK = 0, totalSelatanPB = 0;
     let totalUtaraPK = 0, totalUtaraPB = 0;
 
@@ -321,15 +321,61 @@ function calculateTotal() {
     document.getElementById('grand-total').textContent = totalSelatanPK + totalSelatanPB + totalUtaraPK + totalUtaraPB;
 }
 
-// Filter sekolah
-function filterSekolah() {
-    const search = document.getElementById('searchSekolah').value.toLowerCase();
-    const items = document.querySelectorAll('.sekolah-item');
+// Modal Functions
+function showAddSekolahModal(jalur) {
+    currentJalur = jalur;
+    const modal = document.getElementById('addSekolahModal');
+    const select = document.getElementById('selectSekolah');
     
-    items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        item.style.display = text.includes(search) ? 'grid' : 'none';
-    });
+    loadSekolahOptions(select, jalur);
+    
+    modal.classList.add('show');
+    lucide.createIcons();
+}
+
+function closeAddSekolahModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const modal = document.getElementById('addSekolahModal');
+    modal.classList.remove('show');
+}
+
+async function loadSekolahOptions(select, jalur) {
+    try {
+        const { data: semuaSekolah } = await db
+            .from('sekolah')
+            .select('id, npsn, nama_sekolah');
+
+        const { data: sudahAda } = await db
+            .from('rute_distribusi')
+            .select('sekolah_id')
+            .eq('jalur', jalur);
+
+        const sudahAdaIds = sudahAda ? sudahAda.map(d => d.sekolah_id) : [];
+        const tersedia = semuaSekolah.filter(s => !sudahAdaIds.includes(s.id));
+
+        select.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
+        tersedia.forEach(sekolah => {
+            const option = document.createElement('option');
+            option.value = sekolah.id;
+            option.textContent = `${sekolah.npsn} - ${sekolah.nama_sekolah}`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading sekolah:', error);
+    }
+}
+
+async function confirmAddSekolah() {
+    const select = document.getElementById('selectSekolah');
+    const sekolahId = parseInt(select.value);
+    
+    if (!sekolahId) {
+        showToast('Pilih sekolah terlebih dahulu', 'error');
+        return;
+    }
+
+    await tambahKeDistribusi(sekolahId, currentJalur);
+    closeAddSekolahModal();
 }
 
 // Toast notification
