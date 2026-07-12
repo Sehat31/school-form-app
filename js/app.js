@@ -603,24 +603,47 @@ async function uploadMBGFile() {
 function parseTanggalLahir(tanggal) {
     if (!tanggal) return null;
     
+    // Jika sudah Date object dari Excel
     if (tanggal instanceof Date) {
+        if (isNaN(tanggal.getTime())) return null; // Invalid date
         const year = tanggal.getFullYear();
         const month = String(tanggal.getMonth() + 1).padStart(2, '0');
         const day = String(tanggal.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
     
-    const parts = String(tanggal).split('-');
+    const str = String(tanggal).trim();
+    
+    // Coba split dengan - atau /
+    let parts = str.split(/[-\/]/);
+    
     if (parts.length === 3) {
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        let [dd, mm, yy] = parts;
+        
+        // Pad single digit (contoh: 5 → 05)
+        dd = dd.padStart(2, '0');
+        mm = mm.padStart(2, '0');
+        
+        // Convert YY ke YYYY
+        let year = parseInt(yy);
+        if (year < 100) {
+            // Asumsi: 00-30 = 2000-2030, 31-99 = 1931-1999
+            year = year > 30 ? 1900 + year : 2000 + year;
+        }
+        
+        // Validasi tanggal
+        const date = new Date(year, parseInt(mm) - 1, parseInt(dd));
+        if (isNaN(date.getTime())) return null;
+        
+        return `${year}-${mm}-${dd}`;
     }
     
-    const parts2 = String(tanggal).split('/');
-    if (parts2.length === 3) {
-        return `${parts2[2]}-${parts2[1]}-${parts2[0]}`;
+    // Jika sudah format YYYY-MM-DD (ISO)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return str;
     }
     
-    return tanggal;
+    return null;
 }
 
 // ============================================
