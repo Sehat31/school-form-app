@@ -56,6 +56,7 @@ function unlockDistribusi() {
 function lockDistribusi() {
     distribusiUnlocked = false;
     updateSecurityUI();
+    renderDistribusi();  // ← TAMBAHKAN INI!
     showToast('Rute distribusi dikunci', 'success');
 }
 
@@ -67,6 +68,7 @@ function verifyPassword() {
         distribusiUnlocked = true;
         closePasswordModal();
         updateSecurityUI();
+        renderDistribusi();  // ← TAMBAHKAN INI!
         showToast('Mode edit diaktifkan', 'success');
     } else {
         alert('Password salah!');
