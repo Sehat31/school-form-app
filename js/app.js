@@ -643,19 +643,50 @@ async function loadUploadedFiles() {
             return;
         }
 
-        // Ambil data sekolah untuk mapping nama
+        // Ambil semua data sekolah dari database
         const schools = await getAllSchools();
-        const schoolMap = {};
-        schools.forEach(s => {
-            schoolMap[s.npsn] = s.nama_sekolah;
-        });
 
         container.innerHTML = files.map(file => {
-            const npsn = file.metadata?.npsn || extractNPSNFromPath(file.path);
-            const schoolName = schoolMap[npsn] || 'Sekolah Tidak Dikenal';
-            const uploadedDate = file.metadata?.uploaded_at ? 
-                new Date(file.metadata.uploaded_at).toLocaleDateString('id-ID') : 
-                'Tanggal tidak diketahui';
+            // Cari sekolah yang cocok berdasarkan NPSN dari metadata
+            let matchedSchool = null;
+            
+            // Cara 1: Cari dari metadata NPSN
+            if (file.metadata?.npsn) {
+                matchedSchool = schools.find(s => s.npsn === file.metadata.npsn);
+            }
+            
+            // Cara 2: Jika metadata tidak ada, cari dari nama file
+            if (!matchedSchool) {
+                // Ekstrak nama dari filename: SDN_Pakusari_01_2026-07-12_14-30-45.xlsx
+                const fileName = file.name.replace('.xlsx', '');
+                const parts = fileName.split('_');
+                
+                // Cari sekolah yang namanya mirip dengan bagian awal filename
+                for (const school of schools) {
+                    const schoolNameNormalized = school.nama_sekolah.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const fileNameNormalized = parts.slice(0, -2).join('').toLowerCase();
+                    
+                    if (fileNameNormalized.includes(schoolNameNormalized) || 
+                        schoolNameNormalized.includes(fileNameNormalized)) {
+                        matchedSchool = school;
+                        break;
+                    }
+                }
+            }
+            
+            // Tampilkan nama sekolah dari database atau "Sekolah Tidak Dikenal"
+            const schoolName = matchedSchool ? matchedSchool.nama_sekolah : 'Sekolah Tidak Dikenal';
+            
+            // Ambil tanggal dari metadata atau nama file
+            let uploadedDate = 'Tanggal tidak diketahui';
+            if (file.metadata?.uploaded_at) {
+                uploadedDate = new Date(file.metadata.uploaded_at).toLocaleDateString('id-ID');
+            } else {
+                const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
+                if (dateMatch) {
+                    uploadedDate = new Date(dateMatch[1]).toLocaleDateString('id-ID');
+                }
+            }
             
             const displayName = `${schoolName} - ${uploadedDate}.xlsx`;
             
@@ -674,7 +705,7 @@ async function loadUploadedFiles() {
                     <i data-lucide="file-spreadsheet"></i>
                     <div class="file-item-info">
                         <p class="file-item-name">${displayName}</p>
-                        <p class="file-item-meta">${formatFileSize(file.metadata?.size || 0)}</p>
+                        <p class="file-item-meta">${formatFileSize(file.metadata?.size || file.size || 0)}</p>
                         <p class="file-item-meta" style="font-size: 0.75rem; color: var(--text-light);">
                             Sekolah: ${schoolName}
                         </p>
