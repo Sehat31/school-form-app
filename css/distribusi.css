@@ -2,39 +2,7 @@
 .distribusi-main {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 24px;
-}
-
-/* Search Section */
-.search-section {
-    margin-bottom: 24px;
-}
-
-.search-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 18px;
-    background: var(--bg-card);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-}
-
-.search-box i {
-    width: 20px;
-    height: 20px;
-    color: var(--text-light);
-}
-
-.search-box input {
-    border: none;
-    background: none;
-    outline: none;
-    flex: 1;
-    font-size: 1rem;
-    font-family: inherit;
-    color: var(--text);
+    padding: 32px 24px;
 }
 
 /* Summary Cards */
@@ -46,62 +14,86 @@
 }
 
 .summary-card {
-    border-radius: 12px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
     padding: 24px;
-    color: white;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
 }
 
 .jalur-selatan {
-    background: linear-gradient(135deg, #8B4513, #D2691E);
-    border: 2px solid #FFD700;
+    border-left: 4px solid #f59e0b;
 }
 
 .jalur-utara {
-    background: linear-gradient(135deg, #1E3A8A, #3B82F6);
-    border: 2px solid #60A5FA;
+    border-left: 4px solid #3b82f6;
 }
 
-.summary-card h3 {
-    margin: 0 0 20px 0;
-    font-size: 1.3rem;
-    text-align: center;
+.summary-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+}
+
+.summary-header i {
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+}
+
+.summary-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text);
 }
 
 .summary-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
 }
 
-.stat {
-    text-align: center;
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     padding: 12px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 8px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
 }
 
-.stat-label {
-    display: block;
-    font-size: 0.85rem;
-    opacity: 0.9;
-    margin-bottom: 5px;
+.summary-item.grand {
+    grid-column: 1 / -1;
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
 }
 
-.stat-value {
-    display: block;
+.summary-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.summary-value {
     font-size: 1.5rem;
-    font-weight: bold;
+    font-weight: 700;
+    color: var(--text);
 }
 
-.grand-total {
-    text-align: center;
-    padding: 12px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 1.1rem;
-    border-top: 2px dashed rgba(255,255,255,0.4);
+.summary-value.pk {
+    color: #10b981;
+}
+
+.summary-value.pb {
+    color: #3b82f6;
+}
+
+.summary-item.grand .summary-value {
+    color: var(--primary);
+    font-size: 2rem;
 }
 
 /* Distribution Grid */
@@ -114,14 +106,14 @@
 
 .distribution-panel {
     background: var(--bg-card);
-    border-radius: 12px;
+    border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: var(--shadow-md);
-    border: 2px solid var(--border);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
 
 .panel-header {
-    background: linear-gradient(135deg, #C71585, #FF1493);
+    background: var(--primary);
     color: white;
     padding: 16px 20px;
     display: flex;
@@ -131,7 +123,15 @@
 
 .panel-header h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-header h3 i {
+    width: 20px;
+    height: 20px;
 }
 
 .table-header {
@@ -141,7 +141,7 @@
     padding: 12px 20px;
     background: var(--bg);
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-light);
     border-bottom: 2px solid var(--border);
 }
@@ -156,11 +156,12 @@
     display: grid;
     grid-template-columns: 40px 2fr 1fr 1fr 1fr;
     gap: 10px;
-    padding: 12px 20px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
     align-items: center;
     cursor: move;
     transition: all 0.2s;
+    background: var(--bg-card);
 }
 
 .sekolah-item:hover {
@@ -198,6 +199,7 @@
 .sekolah-info strong {
     font-size: 0.95rem;
     color: var(--text);
+    font-weight: 600;
 }
 
 .sekolah-info small {
@@ -209,10 +211,11 @@
     width: 100%;
     padding: 8px;
     border: 1.5px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     text-align: center;
     font-size: 0.9rem;
     font-weight: 600;
+    background: var(--bg-card);
 }
 
 .porsi-input input:focus {
@@ -223,21 +226,12 @@
 
 .total-porsi {
     text-align: center;
-    font-weight: bold;
+    font-weight: 700;
     font-size: 1.1rem;
     color: var(--primary);
 }
 
 /* Sekolah Belum Distribusi */
-.belum-distribusi-section {
-    background: var(--bg-card);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-    border: 2px solid var(--border);
-    margin-bottom: 30px;
-}
-
 .belum-item {
     grid-template-columns: 40px 2fr 2fr 120px;
 }
@@ -256,13 +250,13 @@
 }
 
 .porsi-badge.pk {
-    background: #dbeafe;
-    color: #1e40af;
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .porsi-badge.pb {
-    background: #d1fae5;
-    color: #065f46;
+    background: #dbeafe;
+    color: #1e40af;
 }
 
 .porsi-badge.total {
@@ -278,16 +272,26 @@
 
 /* Grand Total Section */
 .grand-total-section {
-    background: linear-gradient(135deg, #C71585, #FF1493);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
     padding: 30px;
-    border-radius: 12px;
+    border-radius: var(--radius);
     text-align: center;
+    box-shadow: var(--shadow-lg);
 }
 
 .grand-total-section h2 {
     margin: 0 0 20px 0;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.grand-total-section h2 i {
+    width: 24px;
+    height: 24px;
 }
 
 .grand-total-stats {
@@ -299,7 +303,8 @@
 .grand-stat {
     padding: 20px;
     background: rgba(255,255,255,0.1);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(10px);
 }
 
 .grand-stat-label {
@@ -312,7 +317,27 @@
 .grand-stat-value {
     display: block;
     font-size: 2rem;
-    font-weight: bold;
+    font-weight: 700;
+}
+
+.grand-stat-value.pk {
+    color: #86efac;
+}
+
+.grand-stat-value.pb {
+    color: #93c5fd;
+}
+
+/* Modal */
+.form-select {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: var(--bg-card);
+    color: var(--text);
 }
 
 /* Toast */
@@ -326,8 +351,8 @@
     padding: 14px 24px;
     background: var(--text);
     color: white;
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
     font-size: 0.9rem;
     font-weight: 500;
     z-index: 1000;
@@ -342,11 +367,11 @@
 }
 
 .toast.success {
-    background: #10b981;
+    background: var(--success);
 }
 
 .toast.error {
-    background: #ef4444;
+    background: var(--danger);
 }
 
 .toast i {
@@ -374,5 +399,9 @@
     .grand-total-stats {
         grid-template-columns: 1fr;
         gap: 15px;
+    }
+    
+    .summary-stats {
+        grid-template-columns: 1fr;
     }
 }
