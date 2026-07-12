@@ -1,24 +1,17 @@
-// ============================================
-// DISTRIBUSI PORTAL SPPG
-// ============================================
-
 let allSekolahData = [];
 let distribusiData = [];
 let draggedElement = null;
 let currentJalur = '';
 
-// 🔒 SECURITY
 let distribusiUnlocked = false;
 const DISTRIBUSI_PASSWORD = '2024';
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     updateSecurityUI();
     loadData();
 });
 
-// Update Security UI
 function updateSecurityUI() {
     const notice = document.getElementById('securityNotice');
     const btnTambahSelatan = document.getElementById('btnTambahSelatan');
@@ -43,7 +36,6 @@ function updateSecurityUI() {
     lucide.createIcons();
 }
 
-// Unlock Distribusi
 function unlockDistribusi() {
     document.getElementById('passwordModal').classList.add('show');
     document.getElementById('passwordInput').value = '';
@@ -51,7 +43,6 @@ function unlockDistribusi() {
     lucide.createIcons();
 }
 
-// Lock Distribusi
 function lockDistribusi() {
     distribusiUnlocked = false;
     updateSecurityUI();
@@ -59,7 +50,6 @@ function lockDistribusi() {
     showToast('Rute distribusi dikunci', 'success');
 }
 
-// Verify Password
 function verifyPassword() {
     const password = document.getElementById('passwordInput').value;
     
@@ -74,13 +64,11 @@ function verifyPassword() {
     }
 }
 
-// Close Password Modal
 function closePasswordModal(event) {
     if (event && event.target !== event.currentTarget) return;
     document.getElementById('passwordModal').classList.remove('show');
 }
 
-// Load semua data
 async function loadData() {
     try {
         const { data: sekolah, error: errSekolah } = await db
@@ -108,7 +96,6 @@ async function loadData() {
     }
 }
 
-// Hitung PK/PB
 async function calculatePKPB() {
     for (const sekolah of allSekolahData) {
         const { data: pmPK } = await db
@@ -134,7 +121,6 @@ async function calculatePKPB() {
     }
 }
 
-// Render distribusi
 function renderDistribusi() {
     const listSelatan = document.getElementById('list-selatan');
     const listUtara = document.getElementById('list-utara');
@@ -167,7 +153,6 @@ function renderDistribusi() {
     lucide.createIcons();
 }
 
-// Create item sekolah untuk jalur
 function createSekolahItem(sekolah, distribusi, jalur) {
     const pk = distribusi.porsi_kecil || sekolah.pk_count || 0;
     const pb = distribusi.porsi_besar || sekolah.pb_count || 0;
@@ -205,12 +190,11 @@ function createSekolahItem(sekolah, distribusi, jalur) {
             <button class="btn-hapus" onclick="hapusDariDistribusi(${distribusi.id}, '${sekolah.nama_sekolah}')" title="Hapus dari distribusi">
                 <i data-lucide="trash-2"></i>
             </button>
-            ` : '<div style="width: 40px;"></div>'}
+            ` : '<div style="width: 35px;"></div>'}
         </div>
     `;
 }
 
-// Create item sekolah belum masuk distribusi
 function createSekolahItemBelum(sekolah) {
     return `
         <div class="sekolah-item belum-item" draggable="${distribusiUnlocked}" ondragstart="drag(event)" data-sekolah-id="${sekolah.id}">
@@ -232,12 +216,11 @@ function createSekolahItemBelum(sekolah) {
                     <i data-lucide="plus"></i> Tambah
                 </button>
             </div>
-            ` : '<div style="width: 100px;"></div>'}
+            ` : '<div style="width: 80px;"></div>'}
         </div>
     `;
 }
 
-// Drag and Drop
 function drag(event) {
     if (!distribusiUnlocked) {
         event.preventDefault();
@@ -309,7 +292,6 @@ async function drop(event, jalur) {
     await loadData();
 }
 
-// Update porsi
 async function updatePorsi(id, jenis, value) {
     if (!distribusiUnlocked) {
         showToast('Buka kunci untuk mengedit', 'error');
@@ -334,7 +316,6 @@ async function updatePorsi(id, jenis, value) {
     }
 }
 
-// Tambah sekolah ke distribusi
 async function tambahKeDistribusi(sekolahId) {
     if (!distribusiUnlocked) {
         showToast('Buka kunci untuk menambah sekolah', 'error');
@@ -377,7 +358,6 @@ async function tambahKeDistribusi(sekolahId) {
     await loadData();
 }
 
-// Hapus sekolah dari distribusi
 async function hapusDariDistribusi(distribusiId, namaSekolah) {
     if (!distribusiUnlocked) {
         showToast('Buka kunci untuk menghapus', 'error');
@@ -399,7 +379,7 @@ async function hapusDariDistribusi(distribusiId, namaSekolah) {
 
         distribusiData = distribusiData.filter(d => d.id !== distribusiId);
         
-        showToast(`${namaSekolah} dihapus dari distribusi`, 'success');
+        showToast(`${namaSekolah} dihapus dan kembali ke daftar belum masuk rute`, 'success');
         await loadData();
     } catch (error) {
         console.error('Error deleting:', error);
@@ -407,7 +387,6 @@ async function hapusDariDistribusi(distribusiId, namaSekolah) {
     }
 }
 
-// Hitung total
 function calculateTotal() {
     let totalSelatanPK = 0, totalSelatanPB = 0;
     let totalUtaraPK = 0, totalUtaraPB = 0;
@@ -438,7 +417,6 @@ function calculateTotal() {
     document.getElementById('grand-total').textContent = totalSelatanPK + totalSelatanPB + totalUtaraPK + totalUtaraPB;
 }
 
-// Modal Functions
 function showAddSekolahModal(jalur) {
     if (!distribusiUnlocked) {
         showToast('Buka kunci untuk menambah sekolah', 'error');
@@ -500,7 +478,6 @@ async function confirmAddSekolah() {
     closeAddSekolahModal();
 }
 
-// Toast notification
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     const icon = document.getElementById('toastIcon');
