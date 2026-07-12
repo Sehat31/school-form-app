@@ -6,7 +6,6 @@ let allSekolahData = [];
 let distribusiData = [];
 let draggedElement = null;
 let currentJalur = '';
-let pendingAction = null;
 
 // 🔒 SECURITY
 let distribusiUnlocked = false;
@@ -56,7 +55,7 @@ function unlockDistribusi() {
 function lockDistribusi() {
     distribusiUnlocked = false;
     updateSecurityUI();
-    renderDistribusi();  // ← TAMBAHKAN INI!
+    renderDistribusi();
     showToast('Rute distribusi dikunci', 'success');
 }
 
@@ -68,7 +67,7 @@ function verifyPassword() {
         distribusiUnlocked = true;
         closePasswordModal();
         updateSecurityUI();
-        renderDistribusi();  // ← TAMBAHKAN INI!
+        renderDistribusi();
         showToast('Mode edit diaktifkan', 'success');
     } else {
         alert('Password salah!');
