@@ -16,11 +16,24 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     loadSchoolDropdown();
     
+    // Set kartu pertama (Sekolah) sebagai active saat pertama kali load
+    setActiveStatCard('sekolah');
+    
     if (sessionStorage.getItem('sensitiveDataUnlocked') === 'true') {
         sensitiveDataUnlocked = true;
         updateSecurityBar();
     }
 });
+
+// Helper function untuk set kartu statistik aktif
+function setActiveStatCard(tab) {
+    document.querySelectorAll('.stat-clickable').forEach(card => {
+        card.classList.remove('active');
+        if (card.dataset.tab === tab) {
+            card.classList.add('active');
+        }
+    });
+}
 
 // ============================================
 // 🔒 SECURITY FUNCTIONS
@@ -185,6 +198,8 @@ function showPage(pageName, event) {
     if (pageName === 'data') {
         loadAllData();
         updateSecurityBar();
+        // Pastikan kartu yang sesuai aktif saat pindah ke halaman data
+        setActiveStatCard(currentDataTab);
     }
     if (pageName === 'mbg') {
         loadSchoolDropdown();
@@ -419,7 +434,6 @@ async function uploadMBGFile() {
         const sekolahId = selectedOption.dataset.sekolahId;
         const sekolahName = selectedOption.textContent.split(' - ')[1] || 'Sekolah';
 
-        // 🔍 CEK NIK DUPLIKAT DI SEKOLAH LAIN
         const allNIKsToUpload = [];
         parsedPMData.forEach(r => {
             const nik = String(r['NIK (16 Digit)'] || r.NIK || '').trim();
@@ -461,7 +475,6 @@ async function uploadMBGFile() {
             }
         }
 
-        // Upload file to storage DENGAN METADATA + TIMESTAMP
         const now = new Date();
         const timestamp = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
         const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${now.toISOString().split('T')[0]}_${timestamp}.xlsx`;
@@ -472,7 +485,6 @@ async function uploadMBGFile() {
             uploaded_at: new Date().toISOString()
         }, fileName);
 
-        // Insert PM data dengan MAPPING YANG DIPERBAIKI
         if (parsedPMData.length > 0) {
             const pmRecords = parsedPMData.map(r => {
                 const namaLengkap = r['NAMA LENGKAP (Sesuai Akta/KTP)'] || 
@@ -539,7 +551,6 @@ async function uploadMBGFile() {
             await insertBulkPM(pmRecords);
         }
 
-        // Insert Guru data dengan MAPPING YANG DIPERBAIKI
         if (parsedGuruData.length > 0) {
             const guruRecords = parsedGuruData.map(r => {
                 const namaLengkap = r['NAMA LENGKAP (Sesuai KTP)'] || 
@@ -601,13 +612,12 @@ async function uploadMBGFile() {
 }
 
 // ============================================
-// 🆕 PARSE TANGGAL LAHIR (DIPERBAIKI)
+// PARSE TANGGAL LAHIR
 // ============================================
 
 function parseTanggalLahir(tanggal) {
     if (!tanggal) return null;
     
-    // Jika sudah Date object dari ExcelJS
     if (tanggal instanceof Date) {
         if (isNaN(tanggal.getTime())) return null;
         const year = tanggal.getFullYear();
@@ -625,25 +635,20 @@ function parseTanggalLahir(tanggal) {
         let p3 = parseInt(parts[2]);
         let day, month, year;
         
-        // Deteksi format otomatis
         if (parts[0].length === 4) {
-            // Format YYYY-MM-DD
             year = p1; month = p2; day = p3;
         } else if (parts[2].length === 4) {
-            // Format DD/MM/YYYY atau MM/DD/YYYY
             year = p3;
             if (p2 > 12) { month = p1; day = p2; } 
             else if (p1 > 12) { day = p1; month = p2; } 
-            else { day = p1; month = p2; } // Default Indonesia
+            else { day = p1; month = p2; }
         } else {
-            // Format DD/MM/YY atau MM/DD/YY
             year = p3 > 30 ? 1900 + p3 : 2000 + p3;
             if (p2 > 12) { month = p1; day = p2; } 
             else if (p1 > 12) { day = p1; month = p2; } 
-            else { day = p1; month = p2; } // Default Indonesia
+            else { day = p1; month = p2; }
         }
         
-        // Validasi dasar
         if (month < 1 || month > 12 || day < 1 || day > 31) {
             console.warn('Tanggal tidak valid:', str);
             return null;
@@ -652,7 +657,6 @@ function parseTanggalLahir(tanggal) {
         return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
     
-    // Jika sudah format YYYY-MM-DD (ISO)
     if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
         return str;
     }
@@ -681,25 +685,19 @@ async function loadUploadedFiles() {
             return;
         }
 
-        // Ambil semua data sekolah dari database
         const schools = await getAllSchools();
 
         container.innerHTML = files.map(file => {
-            // Cari sekolah yang cocok berdasarkan NPSN dari metadata
             let matchedSchool = null;
             
-            // Cara 1: Cari dari metadata NPSN
             if (file.metadata?.npsn) {
                 matchedSchool = schools.find(s => s.npsn === file.metadata.npsn);
             }
             
-            // Cara 2: Jika metadata tidak ada, cari dari nama file
             if (!matchedSchool) {
-                // Ekstrak nama dari filename: SDN_Pakusari_01_2026-07-12_14-30-45.xlsx
                 const fileName = file.name.replace('.xlsx', '');
                 const parts = fileName.split('_');
                 
-                // Cari sekolah yang namanya mirip dengan bagian awal filename
                 for (const school of schools) {
                     const schoolNameNormalized = school.nama_sekolah.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const fileNameNormalized = parts.slice(0, -2).join('').toLowerCase();
@@ -712,10 +710,8 @@ async function loadUploadedFiles() {
                 }
             }
             
-            // Tampilkan nama sekolah dari database atau "Sekolah Tidak Dikenal"
             const schoolName = matchedSchool ? matchedSchool.nama_sekolah : 'Sekolah Tidak Dikenal';
             
-            // Ambil tanggal dari metadata atau nama file
             let uploadedDate = 'Tanggal tidak diketahui';
             if (file.metadata?.uploaded_at) {
                 uploadedDate = new Date(file.metadata.uploaded_at).toLocaleDateString('id-ID');
@@ -791,14 +787,14 @@ async function deleteUploadedFile(path) {
 // DATA TABLE
 // ============================================
 
+// 🆕 DIPERBAIKI: Support kartu statistik yang bisa diklik
 function showDataTab(tab, event) {
     if (event) event.preventDefault();
     currentDataTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    if (event && event.target) {
-        const tabBtn = event.target.closest('.tab-btn');
-        if (tabBtn) tabBtn.classList.add('active');
-    }
+    
+    // Update active state pada kartu statistik
+    setActiveStatCard(tab);
+    
     filterData();
 }
 
