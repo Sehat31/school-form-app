@@ -403,43 +403,32 @@
                 </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="data-tabs">
-                <button class="tab-btn active" onclick="showDataTab('sekolah', event)">
-                    <i data-lucide="school"></i> Data Sekolah
-                </button>
-                <button class="tab-btn" onclick="showDataTab('pm', event)">
-                    <i data-lucide="users"></i> Penerima Manfaat
-                </button>
-                <button class="tab-btn" onclick="showDataTab('guru', event)">
-                    <i data-lucide="user-check"></i> Guru & Tendik
-                </button>
-            </div>
+           
 
-            <!-- Stats -->
-            <div class="stats-grid" id="statsGrid">
-                <div class="stat-card">
-                    <i data-lucide="school"></i>
-                    <div>
-                        <p class="stat-number" id="totalSekolah">0</p>
-                        <p class="stat-label">Total Sekolah</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <i data-lucide="users"></i>
-                    <div>
-                        <p class="stat-number" id="totalPM">0</p>
-                        <p class="stat-label">Total Penerima Manfaat</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <i data-lucide="user-check"></i>
-                    <div>
-                        <p class="stat-number" id="totalGuru">0</p>
-                        <p class="stat-label">Total Guru & Tendik</p>
-                    </div>
-                </div>
-            </div>
+           <!-- Stats (sekaligus sebagai Menu Tab) -->
+<div class="stats-grid" id="statsGrid">
+    <div class="stat-card stat-clickable active" onclick="showDataTab('sekolah', event)" data-tab="sekolah">
+        <i data-lucide="school"></i>
+        <div>
+            <p class="stat-number" id="totalSekolah">0</p>
+            <p class="stat-label">Data Sekolah</p>
+        </div>
+    </div>
+    <div class="stat-card stat-clickable" onclick="showDataTab('pm', event)" data-tab="pm">
+        <i data-lucide="users"></i>
+        <div>
+            <p class="stat-number" id="totalPM">0</p>
+            <p class="stat-label">Penerima Manfaat</p>
+        </div>
+    </div>
+    <div class="stat-card stat-clickable" onclick="showDataTab('guru', event)" data-tab="guru">
+        <i data-lucide="user-check"></i>
+        <div>
+            <p class="stat-number" id="totalGuru">0</p>
+            <p class="stat-label">Guru & Tendik</p>
+        </div>
+    </div>
+</div>
 
             <!-- Search & Filter -->
             <div class="card">
