@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rute Distribusi - SPPG Jatian</title>
+    <title>Rute Distribusi - Portal SPPG Jatian</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2NkYGCQAAAABQABh6FO1AAAAABJRU5ErkJggg==">
     
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/distribusi.css">
@@ -27,6 +30,12 @@
 
     <!-- Main Content -->
     <main class="distribusi-main">
+        <!-- Security Notice -->
+        <div class="security-notice" id="securityNotice">
+            <i data-lucide="lock"></i>
+            <span>Mode Baca Saja - <button onclick="unlockDistribusi()" class="btn-link">Klik untuk Edit</button></span>
+        </div>
+
         <!-- Summary Cards -->
         <div class="summary-grid">
             <div class="summary-card jalur-selatan">
@@ -86,16 +95,17 @@
             <div class="distribution-panel">
                 <div class="panel-header">
                     <h3><i data-lucide="truck"></i> DISTRIBUSI JALUR SELATAN</h3>
-                    <button class="btn btn-sm btn-primary" onclick="showAddSekolahModal('Selatan')">
+                    <button class="btn btn-sm btn-primary" onclick="showAddSekolahModal('Selatan')" id="btnTambahSelatan" style="display:none;">
                         <i data-lucide="plus"></i> Tambah Sekolah
                     </button>
                 </div>
                 <div class="table-header">
-                    <span style="width: 40px;"></span>
+                    <span style="width: 30px;"></span>
                     <span>SEKOLAH</span>
-                    <span>PK</span>
-                    <span>PB</span>
-                    <span>TOTAL</span>
+                    <span style="width: 80px;">PK</span>
+                    <span style="width: 80px;">PB</span>
+                    <span style="width: 70px;">TOTAL</span>
+                    <span style="width: 40px;"></span>
                 </div>
                 <div class="sekolah-list" id="list-selatan" ondrop="drop(event, 'Selatan')" ondragover="allowDrop(event)">
                     <div class="loading-placeholder">
@@ -109,16 +119,17 @@
             <div class="distribution-panel">
                 <div class="panel-header">
                     <h3><i data-lucide="truck"></i> DISTRIBUSI JALUR UTARA</h3>
-                    <button class="btn btn-sm btn-primary" onclick="showAddSekolahModal('Utara')">
+                    <button class="btn btn-sm btn-primary" onclick="showAddSekolahModal('Utara')" id="btnTambahUtara" style="display:none;">
                         <i data-lucide="plus"></i> Tambah Sekolah
                     </button>
                 </div>
                 <div class="table-header">
-                    <span style="width: 40px;"></span>
+                    <span style="width: 30px;"></span>
                     <span>SEKOLAH</span>
-                    <span>PK</span>
-                    <span>PB</span>
-                    <span>TOTAL</span>
+                    <span style="width: 80px;">PK</span>
+                    <span style="width: 80px;">PB</span>
+                    <span style="width: 70px;">TOTAL</span>
+                    <span style="width: 40px;"></span>
                 </div>
                 <div class="sekolah-list" id="list-utara" ondrop="drop(event, 'Utara')" ondragover="allowDrop(event)">
                     <div class="loading-placeholder">
@@ -163,6 +174,34 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal Password -->
+    <div id="passwordModal" class="modal-overlay" onclick="closePasswordModal(event)">
+        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3><i data-lucide="lock"></i> Verifikasi Keamanan</h3>
+                <button class="btn-icon" onclick="closePasswordModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="password-info">
+                    <i data-lucide="info"></i>
+                    <p>Masukkan password untuk mengedit rute distribusi</p>
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="passwordInput" placeholder="Masukkan password" class="form-control">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-outline" onclick="closePasswordModal()">Batal</button>
+                    <button class="btn btn-primary" onclick="verifyPassword()">
+                        <i data-lucide="unlock"></i> Verifikasi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Tambah Sekolah -->
     <div id="addSekolahModal" class="modal-overlay" onclick="closeAddSekolahModal(event)">
