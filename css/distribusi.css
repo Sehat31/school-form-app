@@ -39,7 +39,7 @@
     color: #78350f;
 }
 
-/* Summary Cards - More Compact */
+/* Summary Cards */
 .summary-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -131,7 +131,7 @@
     font-size: 1.5rem;
 }
 
-/* Distribution Grid - Compact */
+/* Distribution Grid */
 .distribution-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -298,7 +298,7 @@
     height: 16px;
 }
 
-/* Sekolah Belum Distribusi - Compact */
+/* Sekolah Belum Distribusi */
 .belum-item {
     grid-template-columns: 30px 2fr 180px 100px;
     display: grid;
@@ -351,7 +351,7 @@
     font-size: 0.8rem;
 }
 
-/* Grand Total Section - Compact */
+/* Grand Total Section */
 .grand-total-section {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
