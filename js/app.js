@@ -614,34 +614,63 @@ function parseTanggalLahir(tanggal) {
     
     const str = String(tanggal).trim();
     
-    // Coba split dengan - atau /
+    // Split dengan - atau /
     let parts = str.split(/[-\/]/);
     
     if (parts.length === 3) {
-        let [part1, part2, part3] = parts;
+        let [p1, p2, p3] = parts.map(p => p.trim());
         let day, month, year;
         
-        // Deteksi format berdasarkan panjang digit
-        if (part1.length === 4) {
-            // Format YYYY-MM-DD atau YYYY/MM/DD
-            year = parseInt(part1);
-            month = parseInt(part2);
-            day = parseInt(part3);
-        } else if (part3.length === 4) {
-            // Format DD-MM-YYYY atau DD/MM/YYYY
-            day = parseInt(part1);
-            month = parseInt(part2);
-            year = parseInt(part3);
-        } else {
-            // Format DD-MM-YY atau DD/MM/YY
-            day = parseInt(part1);
-            month = parseInt(part2);
-            year = parseInt(part3);
+        // === KASUS 1: YYYY di depan ===
+        if (p1.length === 4) {
+            // Format: YYYY-MM-DD
+            year = parseInt(p1);
+            month = parseInt(p2);
+            day = parseInt(p3);
+        } 
+        // === KASUS 2: YYYY di belakang ===
+        else if (p3.length === 4) {
+            year = parseInt(p3);
             
-            // Convert YY ke YYYY
-            if (year < 100) {
-                year = year > 30 ? 1900 + year : 2000 + year;
+            // Deteksi format DD/MM/YYYY vs MM/DD/YYYY
+            // Jika p2 > 12, pasti p2 adalah tanggal (format MM/DD/YYYY)
+            if (parseInt(p2) > 12) {
+                // Format MM/DD/YYYY (Amerika)
+                month = parseInt(p1);
+                day = parseInt(p2);
+            } else if (parseInt(p1) > 12) {
+                // Format DD/MM/YYYY (Indonesia)
+                day = parseInt(p1);
+                month = parseInt(p2);
+            } else {
+                // Keduanya <= 12, asumsikan DD/MM/YYYY (Indonesia)
+                day = parseInt(p1);
+                month = parseInt(p2);
             }
+        } 
+        // === KASUS 3: YY di belakang (2 digit) ===
+        else if (p3.length <= 2) {
+            // Konversi YY ke YYYY
+            year = parseInt(p3);
+            year = year > 30 ? 1900 + year : 2000 + year;
+            
+            // Deteksi format DD/MM/YY vs MM/DD/YY
+            if (parseInt(p2) > 12) {
+                // Format MM/DD/YY (Amerika)
+                month = parseInt(p1);
+                day = parseInt(p2);
+            } else if (parseInt(p1) > 12) {
+                // Format DD/MM/YY (Indonesia)
+                day = parseInt(p1);
+                month = parseInt(p2);
+            } else {
+                // Keduanya <= 12, asumsikan DD/MM/YY (Indonesia)
+                day = parseInt(p1);
+                month = parseInt(p2);
+            }
+        } else {
+            console.warn('Format tanggal tidak dikenali:', str);
+            return null;
         }
         
         // Validasi
@@ -649,6 +678,31 @@ function parseTanggalLahir(tanggal) {
             console.warn('Tanggal tidak valid:', str);
             return null;
         }
+        
+        // Validasi tanggal real (misal 30 Feb tidak valid)
+        const testDate = new Date(year, month - 1, day);
+        if (testDate.getFullYear() !== year || 
+            testDate.getMonth() !== month - 1 || 
+            testDate.getDate() !== day) {
+            console.warn('Tanggal tidak ada di kalender:', str);
+            return null;
+        }
+        
+        // Format output: YYYY-MM-DD
+        const monthStr = String(month).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        
+        return `${year}-${monthStr}-${dayStr}`;
+    }
+    
+    // Jika sudah format YYYY-MM-DD (ISO)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return str;
+    }
+    
+    console.warn('Format tanggal tidak dikenali:', str);
+    return null;
+}
         
         // Pad dengan leading zero
         const monthStr = String(month).padStart(2, '0');
