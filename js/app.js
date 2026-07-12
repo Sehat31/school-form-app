@@ -461,8 +461,8 @@ async function uploadMBGFile() {
             }
         }
 
-        // Upload file to storage DENGAN METADATA
-        const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+       // Upload file to storage DENGAN METADATA
+const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
         await uploadFileToStorageWithMetadata(selectedFile, {
             npsn: npsn,
             sekolah_id: sekolahId,
