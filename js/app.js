@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================
-// 🔒 SECURITY FUNCTIONS
+//  SECURITY FUNCTIONS
 // ============================================
 
 function maskNIK(nik) {
@@ -273,7 +273,7 @@ async function handleSubmit(event) {
 
         if (existingSchools && existingSchools.length > 0) {
             const namaSekolahLama = existingSchools[0].nama_sekolah;
-            showToast(` NPSN Duplikat! NPSN "${npsn}" sudah digunakan oleh sekolah "${namaSekolahLama}". Silakan gunakan NPSN yang berbeda.`, 'error');
+            showToast(`❌ NPSN Duplikat! NPSN "${npsn}" sudah digunakan oleh sekolah "${namaSekolahLama}". Silakan gunakan NPSN yang berbeda.`, 'error');
             
             btn.disabled = false;
             btn.innerHTML = '<i data-lucide="save"></i> Simpan & Lanjutkan ke MBG';
@@ -282,7 +282,7 @@ async function handleSubmit(event) {
         }
 
         await insertSchool(formData);
-        showToast('Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
+        showToast('✅ Data Sekolah berhasil disimpan! Silakan upload Data MBG.', 'success');
 
         setTimeout(() => {
             showPage('mbg');
@@ -294,7 +294,7 @@ async function handleSubmit(event) {
         }, 1000);
     } catch (error) {
         console.error(error);
-        showToast('Gagal menyimpan data: ' + error.message, 'error');
+        showToast('❌ Gagal menyimpan data: ' + error.message, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="save"></i> Simpan & Lanjutkan ke MBG';
@@ -401,12 +401,12 @@ async function uploadMBGFile() {
     const npsn = selectNpsn ? selectNpsn.value : '';
 
     if (!npsn) {
-        showToast('Pilih sekolah terlebih dahulu!', 'error');
+        showToast('❌ Pilih sekolah terlebih dahulu!', 'error');
         return;
     }
 
     if (!selectedFile || (parsedPMData.length === 0 && parsedGuruData.length === 0)) {
-        showToast('Tidak ada data untuk diupload', 'error');
+        showToast('❌ Tidak ada data untuk diupload', 'error');
         return;
     }
 
@@ -469,46 +469,128 @@ async function uploadMBGFile() {
         // Upload file to storage
         await uploadFileToStorage(selectedFile);
 
-        // Insert PM data
+        // Insert PM data dengan MAPPING YANG DIPERBAIKI
         if (parsedPMData.length > 0) {
-            const pmRecords = parsedPMData.map(r => ({
-                sekolah_id: parseInt(sekolahId),
-                npsn: npsn,
-                nik: String(r['NIK (16 Digit)'] || r.NIK || r['NIK'] || ''),
-                nisn: String(r['NISN (10 Digit)'] || r.NISN || r['NISN'] || ''),
-                nama_lengkap: r['Nama Lengkap'] || r['NAMA LENGKAP'] || '',
-                tempat_lahir: r['Tempat Lahir'] || r['TEMPAT LAHIR'] || '',
-                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || r['TANGGAL LAHIR'] || ''),
-                jenis_kelamin: r['Jenis Kelamin'] || r['JENIS KELAMIN'] || '',
-                nama_orang_tua: r['Nama Orang Tua/Wali'] || r['NAMA ORANG TUA/WALI'] || '',
-                kelas: String(r['Kelas'] || r['KELAS'] || ''),
-                keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
-            }));
+            const pmRecords = parsedPMData.map(r => {
+                // Mapping yang lebih fleksibel untuk berbagai variasi nama kolom
+                const namaLengkap = r['NAMA LENGKAP (Sesuai Akta/KTP)'] || 
+                                   r['NAMA LENGKAP'] || 
+                                   r['Nama Lengkap'] || 
+                                   r['nama_lengkap'] || 
+                                   r['nama'] || 
+                                   r['Nama'] || '';
+                
+                const tempatLahir = r['TEMPAT LAHIR (Kota/Kabupaten)'] || 
+                                   r['TEMPAT LAHIR'] || 
+                                   r['Tempat Lahir'] || 
+                                   r['tempat_lahir'] || 
+                                   r['tempat'] || 
+                                   r['Tempat'] || '';
+                
+                const tanggalLahirRaw = r['TANGGAL LAHIR (dd-mm-yyyy)'] || 
+                                        r['TANGGAL LAHIR'] || 
+                                        r['Tanggal Lahir'] || 
+                                        r['tanggal_lahir'] || 
+                                        r['tanggal'] || 
+                                        r['Tanggal'] || '';
+                
+                const jenisKelamin = r['JENIS KELAMIN (L/P)'] || 
+                                    r['JENIS KELAMIN'] || 
+                                    r['Jenis Kelamin'] || 
+                                    r['jenis_kelamin'] || 
+                                    r['jk'] || 
+                                    r['JK'] || 
+                                    r['kelamin'] || '';
+                
+                const namaOrangTua = r['NAMA ORANG TUA/WALI (Ayah/Ibu/Wali)'] || 
+                                    r['NAMA ORANG TUA/WALI'] || 
+                                    r['Nama Orang Tua/Wali'] || 
+                                    r['nama_orang_tua'] || 
+                                    r['orang_tua'] || 
+                                    r['Orang Tua'] || 
+                                    r['nama_ortu'] || 
+                                    r['Nama Orang Tua'] || '';
+                
+                const kelas = r['KELAS (Contoh: 1,7,10)'] || 
+                             r['KELAS'] || 
+                             r['Kelas'] || 
+                             r['kelas'] || 
+                             r['K'] || 
+                             r['TINGKAT'] || '';
+
+                return {
+                    sekolah_id: parseInt(sekolahId),
+                    npsn: npsn,
+                    nik: String(r['NIK (16 Digit)'] || r['NIK'] || r.NIK || '').trim(),
+                    nisn: String(r['NISN (10 Digit)'] || r['NISN'] || r.NISN || '').trim(),
+                    nama_lengkap: namaLengkap.trim(),
+                    tempat_lahir: tempatLahir.trim(),
+                    tanggal_lahir: parseTanggalLahir(tanggalLahirRaw),
+                    jenis_kelamin: jenisKelamin.trim().toUpperCase(),
+                    nama_orang_tua: namaOrangTua.trim(),
+                    kelas: kelas.trim(),
+                    keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
+                };
+            });
+            
+            console.log('PM Records to insert:', pmRecords);
             await insertBulkPM(pmRecords);
         }
 
-        // Insert Guru data
+        // Insert Guru data dengan MAPPING YANG DIPERBAIKI
         if (parsedGuruData.length > 0) {
-            const guruRecords = parsedGuruData.map(r => ({
-                sekolah_id: parseInt(sekolahId),
-                npsn: npsn,
-                nik: String(r['NIK (16 Digit)'] || r.NIK || r['NIK'] || ''),
-                nama_lengkap: r['Nama Lengkap'] || r['NAMA LENGKAP'] || '',
-                tempat_lahir: r['Tempat Lahir'] || r['TEMPAT LAHIR'] || '',
-                tanggal_lahir: parseTanggalLahir(r['Tanggal Lahir'] || r['TANGGAL LAHIR'] || ''),
-                jenis_kelamin: r['Jenis Kelamin'] || r['JENIS KELAMIN'] || '',
-                jabatan: r['Jabatan'] || r['JABATAN'] || '',
-                keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
-            }));
+            const guruRecords = parsedGuruData.map(r => {
+                const namaLengkap = r['NAMA LENGKAP (Sesuai KTP)'] || 
+                                   r['NAMA LENGKAP'] || 
+                                   r['Nama Lengkap'] || 
+                                   r['nama_lengkap'] || 
+                                   r['nama'] || '';
+                
+                const tempatLahir = r['TEMPAT LAHIR (Kota/Kabupaten)'] || 
+                                   r['TEMPAT LAHIR'] || 
+                                   r['Tempat Lahir'] || 
+                                   r['tempat_lahir'] || '';
+                
+                const tanggalLahirRaw = r['TANGGAL LAHIR (dd-mm-yyyy)'] || 
+                                        r['TANGGAL LAHIR'] || 
+                                        r['Tanggal Lahir'] || 
+                                        r['tanggal_lahir'] || '';
+                
+                const jenisKelamin = r['JENIS KELAMIN (L/P)'] || 
+                                    r['JENIS KELAMIN'] || 
+                                    r['Jenis Kelamin'] || 
+                                    r['jenis_kelamin'] || 
+                                    r['jk'] || '';
+                
+                const jabatan = r['JABATAN (Guru/Tendik)'] || 
+                               r['JABATAN'] || 
+                               r['Jabatan'] || 
+                               r['jabatan'] || 
+                               r['posisi'] || '';
+
+                return {
+                    sekolah_id: parseInt(sekolahId),
+                    npsn: npsn,
+                    nik: String(r['NIK (16 Digit)'] || r['NIK'] || r.NIK || '').trim(),
+                    nama_lengkap: namaLengkap.trim(),
+                    tempat_lahir: tempatLahir.trim(),
+                    tanggal_lahir: parseTanggalLahir(tanggalLahirRaw),
+                    jenis_kelamin: jenisKelamin.trim().toUpperCase(),
+                    jabatan: jabatan.trim(),
+                    keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
+                };
+            });
+            
+            console.log('Guru Records to insert:', guruRecords);
             await insertBulkGuru(guruRecords);
         }
 
-        showToast(`${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik berhasil disimpan!`, 'success');
+        showToast(`✅ ${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik berhasil disimpan!`, 'success');
         removeFile();
         loadUploadedFiles();
     } catch (error) {
         console.error(error);
-        showToast('Gagal upload: ' + error.message, 'error');
+        showToast('❌ Gagal upload: ' + error.message, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="cloud-upload"></i> Upload & Simpan ke Database';
@@ -762,7 +844,7 @@ function renderPMTable(row, idx) {
         ? `<button class="btn-icon delete" title="Hapus" onclick="deletePMData(${row.id})">
              <i data-lucide="trash-2"></i>
            </button>`
-        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
+        : `<button class="btn-icon delete" title=" Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
              <i data-lucide="lock"></i>
            </button>`;
     
@@ -771,7 +853,7 @@ function renderPMTable(row, idx) {
         <td>${namaSekolah}</td>
         <td>${nik}</td>
         <td>${row.nisn || '-'}</td>
-        <td>${row.nama_lengkap}</td>
+        <td>${row.nama_lengkap || '-'}</td>
         <td>${row.tempat_lahir || '-'}</td>
         <td>${tglLahir}</td>
         <td>${row.jenis_kelamin || '-'}</td>
@@ -795,7 +877,7 @@ function renderGuruTable(row, idx) {
         ? `<button class="btn-icon delete" title="Hapus" onclick="deleteGuruData(${row.id})">
              <i data-lucide="trash-2"></i>
            </button>`
-        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
+        : `<button class="btn-icon delete" title=" Buka sensor dulu untuk menghapus" onclick="showUnlockWarning()">
              <i data-lucide="lock"></i>
            </button>`;
     
@@ -803,7 +885,7 @@ function renderGuruTable(row, idx) {
         <td>${idx + 1}</td>
         <td>${namaSekolah}</td>
         <td>${nik}</td>
-        <td>${row.nama_lengkap}</td>
+        <td>${row.nama_lengkap || '-'}</td>
         <td>${row.tempat_lahir || '-'}</td>
         <td>${tglLahir}</td>
         <td>${row.jenis_kelamin || '-'}</td>
