@@ -1329,6 +1329,54 @@ body {
     to { transform: rotate(360deg); }
 }
 
+
+/* ============================================
+   RUNNING TEXT MAINTENANCE BANNER
+   ============================================ */
+.maintenance-banner {
+    background: linear-gradient(90deg, #ef4444, #dc2626); /* Warna Merah Warning */
+    color: white;
+    padding: 12px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 98;
+}
+
+.maintenance-text {
+    display: inline-block;
+    padding-left: 100%;
+    animation: scrollText 25s linear infinite;
+}
+
+/* Efek berhenti saat di-hover (biar bisa dibaca) */
+.maintenance-banner:hover .maintenance-text {
+    animation-play-state: paused;
+}
+
+@keyframes scrollText {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* Responsive untuk HP */
+@media (max-width: 768px) {
+    .maintenance-banner {
+        font-size: 0.85rem;
+        padding: 10px 0;
+    }
+    .maintenance-text {
+        animation-duration: 18s; /* Lebih cepat di HP */
+    }
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */
