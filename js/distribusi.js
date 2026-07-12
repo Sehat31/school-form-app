@@ -6,23 +6,87 @@ let allSekolahData = [];
 let distribusiData = [];
 let draggedElement = null;
 let currentJalur = '';
+let pendingAction = null;
+
+// 🔒 SECURITY
+let distribusiUnlocked = false;
+const DISTRIBUSI_PASSWORD = '2024';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
+    updateSecurityUI();
     loadData();
 });
+
+// Update Security UI
+function updateSecurityUI() {
+    const notice = document.getElementById('securityNotice');
+    const btnTambahSelatan = document.getElementById('btnTambahSelatan');
+    const btnTambahUtara = document.getElementById('btnTambahUtara');
+    
+    if (distribusiUnlocked) {
+        notice.innerHTML = '<i data-lucide="unlock"></i><span>Mode Edit Aktif - <button onclick="lockDistribusi()" class="btn-link">Kunci</button></span>';
+        notice.style.background = '#d1fae5';
+        notice.style.borderColor = '#10b981';
+        notice.style.color = '#065f46';
+        btnTambahSelatan.style.display = 'inline-flex';
+        btnTambahUtara.style.display = 'inline-flex';
+    } else {
+        notice.innerHTML = '<i data-lucide="lock"></i><span>Mode Baca Saja - <button onclick="unlockDistribusi()" class="btn-link">Klik untuk Edit</button></span>';
+        notice.style.background = '#fef3c7';
+        notice.style.borderColor = '#f59e0b';
+        notice.style.color = '#92400e';
+        btnTambahSelatan.style.display = 'none';
+        btnTambahUtara.style.display = 'none';
+    }
+    
+    lucide.createIcons();
+}
+
+// Unlock Distribusi
+function unlockDistribusi() {
+    document.getElementById('passwordModal').classList.add('show');
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('passwordInput').focus();
+    lucide.createIcons();
+}
+
+// Lock Distribusi
+function lockDistribusi() {
+    distribusiUnlocked = false;
+    updateSecurityUI();
+    showToast('Rute distribusi dikunci', 'success');
+}
+
+// Verify Password
+function verifyPassword() {
+    const password = document.getElementById('passwordInput').value;
+    
+    if (password === DISTRIBUSI_PASSWORD) {
+        distribusiUnlocked = true;
+        closePasswordModal();
+        updateSecurityUI();
+        showToast('Mode edit diaktifkan', 'success');
+    } else {
+        alert('Password salah!');
+    }
+}
+
+// Close Password Modal
+function closePasswordModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('passwordModal').classList.remove('show');
+}
 
 // Load semua data
 async function loadData() {
     try {
-        // Load semua sekolah
         const { data: sekolah, error: errSekolah } = await db
             .from('sekolah')
             .select('*')
             .order('nama_sekolah', { ascending: true });
 
-        // Load data distribusi
         const { data: distribusi, error: errDistribusi } = await db
             .from('rute_distribusi')
             .select('*')
@@ -34,9 +98,7 @@ async function loadData() {
         allSekolahData = sekolah || [];
         distribusiData = distribusi || [];
 
-        // Hitung PK/PB untuk setiap sekolah
         await calculatePKPB();
-
         renderDistribusi();
         calculateTotal();
     } catch (error) {
@@ -45,31 +107,28 @@ async function loadData() {
     }
 }
 
-// Hitung PK/PB dari data siswa dan guru
+// Hitung PK/PB
 async function calculatePKPB() {
     for (const sekolah of allSekolahData) {
-        // Hitung PK (Kelas 0-3: PAUD, TK, 1, 2, 3)
-        const { data: pmPK, error: errPM } = await db
+        const { data: pmPK } = await db
             .from('pm_mbg')
             .select('id')
             .eq('sekolah_id', sekolah.id)
             .in('kelas', ['PAUD', 'TK', '0', '1', '2', '3']);
 
-        // Hitung PB (Kelas 4-13)
-        const { data: pmPB, error: errPB } = await db
+        const { data: pmPB } = await db
             .from('pm_mbg')
             .select('id')
             .eq('sekolah_id', sekolah.id)
             .in('kelas', ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13']);
 
-        // Hitung Guru & Tendik
-        const { data: guru, error: errGuru } = await db
+        const { data: guru } = await db
             .from('guru_tendik')
             .select('id')
             .eq('sekolah_id', sekolah.id);
 
-        sekolah.pk_count = (pmPK && !errPM) ? pmPK.length : 0;
-        sekolah.pb_count = ((pmPB && !errPB) ? pmPB.length : 0) + ((guru && !errGuru) ? guru.length : 0);
+        sekolah.pk_count = pmPK ? pmPK.length : 0;
+        sekolah.pb_count = (pmPB ? pmPB.length : 0) + (guru ? guru.length : 0);
         sekolah.total_count = sekolah.pk_count + sekolah.pb_count;
     }
 }
@@ -80,11 +139,9 @@ function renderDistribusi() {
     const listUtara = document.getElementById('list-utara');
     const listBelum = document.getElementById('list-belum');
 
-    // Filter sekolah yang sudah ada di distribusi
     const sekolahDiDistribusi = distribusiData.map(d => d.sekolah_id);
     const sekolahBelum = allSekolahData.filter(s => !sekolahDiDistribusi.includes(s.id));
 
-    // Render Jalur Selatan
     const dataSelatan = distribusiData.filter(d => d.jalur === 'Selatan');
     listSelatan.innerHTML = dataSelatan.map(item => {
         const sekolah = allSekolahData.find(s => s.id === item.sekolah_id);
@@ -92,7 +149,6 @@ function renderDistribusi() {
         return createSekolahItem(sekolah, item, 'Selatan');
     }).join('');
 
-    // Render Jalur Utara
     const dataUtara = distribusiData.filter(d => d.jalur === 'Utara');
     listUtara.innerHTML = dataUtara.map(item => {
         const sekolah = allSekolahData.find(s => s.id === item.sekolah_id);
@@ -100,12 +156,10 @@ function renderDistribusi() {
         return createSekolahItem(sekolah, item, 'Utara');
     }).join('');
 
-    // Render Sekolah Belum Masuk
     listBelum.innerHTML = sekolahBelum.map(sekolah => {
         return createSekolahItemBelum(sekolah);
     }).join('');
 
-    // Update count
     document.getElementById('count-selatan').textContent = dataSelatan.length;
     document.getElementById('count-utara').textContent = dataUtara.length;
 
@@ -119,8 +173,8 @@ function createSekolahItem(sekolah, distribusi, jalur) {
     const total = pk + pb;
 
     return `
-        <div class="sekolah-item" draggable="true" ondragstart="drag(event)" data-id="${distribusi.id}" data-sekolah-id="${sekolah.id}">
-            <div class="drag-handle">
+        <div class="sekolah-item" draggable="${distribusiUnlocked}" ondragstart="drag(event)" data-id="${distribusi.id}" data-sekolah-id="${sekolah.id}">
+            <div class="drag-handle" style="${distribusiUnlocked ? '' : 'opacity: 0.3; cursor: not-allowed;'}">
                 <i data-lucide="grip-vertical"></i>
             </div>
             <div class="sekolah-info">
@@ -132,6 +186,7 @@ function createSekolahItem(sekolah, distribusi, jalur) {
                        class="input-porsi input-pk" 
                        value="${pk}" 
                        min="0"
+                       ${!distribusiUnlocked ? 'readonly' : ''}
                        onchange="updatePorsi(${distribusi.id}, 'kecil', this.value)">
             </div>
             <div class="porsi-input">
@@ -139,11 +194,17 @@ function createSekolahItem(sekolah, distribusi, jalur) {
                        class="input-porsi input-pb" 
                        value="${pb}" 
                        min="0"
+                       ${!distribusiUnlocked ? 'readonly' : ''}
                        onchange="updatePorsi(${distribusi.id}, 'besar', this.value)">
             </div>
             <div class="total-porsi">
                 ${total}
             </div>
+            ${distribusiUnlocked ? `
+            <button class="btn-hapus" onclick="hapusDariDistribusi(${distribusi.id}, '${sekolah.nama_sekolah}')" title="Hapus dari distribusi">
+                <i data-lucide="trash-2"></i>
+            </button>
+            ` : '<div style="width: 40px;"></div>'}
         </div>
     `;
 }
@@ -151,8 +212,8 @@ function createSekolahItem(sekolah, distribusi, jalur) {
 // Create item sekolah belum masuk distribusi
 function createSekolahItemBelum(sekolah) {
     return `
-        <div class="sekolah-item belum-item" draggable="true" ondragstart="drag(event)" data-sekolah-id="${sekolah.id}">
-            <div class="drag-handle">
+        <div class="sekolah-item belum-item" draggable="${distribusiUnlocked}" ondragstart="drag(event)" data-sekolah-id="${sekolah.id}">
+            <div class="drag-handle" style="${distribusiUnlocked ? '' : 'opacity: 0.3; cursor: not-allowed;'}">
                 <i data-lucide="grip-vertical"></i>
             </div>
             <div class="sekolah-info">
@@ -164,17 +225,24 @@ function createSekolahItemBelum(sekolah) {
                 <span class="porsi-badge pb">PB: ${sekolah.pb_count || 0}</span>
                 <span class="porsi-badge total">Total: ${sekolah.total_count || 0}</span>
             </div>
+            ${distribusiUnlocked ? `
             <div class="btn-tambah">
                 <button class="btn btn-sm btn-primary" onclick="tambahKeDistribusi(${sekolah.id})">
                     <i data-lucide="plus"></i> Tambah
                 </button>
             </div>
+            ` : '<div style="width: 100px;"></div>'}
         </div>
     `;
 }
 
-// Drag and Drop Functions
+// Drag and Drop
 function drag(event) {
+    if (!distribusiUnlocked) {
+        event.preventDefault();
+        return;
+    }
+    
     draggedElement = event.target.closest('.sekolah-item');
     if (draggedElement) {
         event.dataTransfer.setData('text/plain', draggedElement.dataset.sekolahId);
@@ -183,10 +251,19 @@ function drag(event) {
 }
 
 function allowDrop(event) {
+    if (!distribusiUnlocked) {
+        event.preventDefault();
+        return;
+    }
     event.preventDefault();
 }
 
 async function drop(event, jalur) {
+    if (!distribusiUnlocked) {
+        event.preventDefault();
+        return;
+    }
+    
     event.preventDefault();
     
     const sekolahId = parseInt(event.dataTransfer.getData('text/plain'));
@@ -195,17 +272,14 @@ async function drop(event, jalur) {
         draggedElement.classList.remove('dragging');
     }
 
-    // Cek apakah sekolah sudah ada di distribusi
     const existing = distribusiData.find(d => d.sekolah_id === sekolahId);
     
     if (existing) {
-        // Update jalur
         await db
             .from('rute_distribusi')
             .update({ jalur: jalur })
             .eq('id', existing.id);
     } else {
-        // Tambah baru
         const sekolah = allSekolahData.find(s => s.id === sekolahId);
         if (!sekolah) return;
 
@@ -236,6 +310,12 @@ async function drop(event, jalur) {
 
 // Update porsi
 async function updatePorsi(id, jenis, value) {
+    if (!distribusiUnlocked) {
+        showToast('Buka kunci untuk mengedit', 'error');
+        unlockDistribusi();
+        return;
+    }
+    
     try {
         const field = jenis === 'kecil' ? 'porsi_kecil' : 'porsi_besar';
         const { error } = await db
@@ -255,6 +335,12 @@ async function updatePorsi(id, jenis, value) {
 
 // Tambah sekolah ke distribusi
 async function tambahKeDistribusi(sekolahId) {
+    if (!distribusiUnlocked) {
+        showToast('Buka kunci untuk menambah sekolah', 'error');
+        unlockDistribusi();
+        return;
+    }
+    
     const sekolah = allSekolahData.find(s => s.id === sekolahId);
     if (!sekolah) return;
 
@@ -290,6 +376,36 @@ async function tambahKeDistribusi(sekolahId) {
     await loadData();
 }
 
+// Hapus sekolah dari distribusi
+async function hapusDariDistribusi(distribusiId, namaSekolah) {
+    if (!distribusiUnlocked) {
+        showToast('Buka kunci untuk menghapus', 'error');
+        unlockDistribusi();
+        return;
+    }
+    
+    if (!confirm(`Hapus ${namaSekolah} dari daftar distribusi?\n\nSekolah akan kembali ke daftar "Belum Masuk Rute".`)) {
+        return;
+    }
+
+    try {
+        const { error } = await db
+            .from('rute_distribusi')
+            .delete()
+            .eq('id', distribusiId);
+
+        if (error) throw error;
+
+        distribusiData = distribusiData.filter(d => d.id !== distribusiId);
+        
+        showToast(`${namaSekolah} dihapus dari distribusi`, 'success');
+        await loadData();
+    } catch (error) {
+        console.error('Error deleting:', error);
+        showToast('Gagal menghapus sekolah', 'error');
+    }
+}
+
 // Hitung total
 function calculateTotal() {
     let totalSelatanPK = 0, totalSelatanPB = 0;
@@ -323,6 +439,12 @@ function calculateTotal() {
 
 // Modal Functions
 function showAddSekolahModal(jalur) {
+    if (!distribusiUnlocked) {
+        showToast('Buka kunci untuk menambah sekolah', 'error');
+        unlockDistribusi();
+        return;
+    }
+    
     currentJalur = jalur;
     const modal = document.getElementById('addSekolahModal');
     const select = document.getElementById('selectSekolah');
@@ -335,8 +457,7 @@ function showAddSekolahModal(jalur) {
 
 function closeAddSekolahModal(event) {
     if (event && event.target !== event.currentTarget) return;
-    const modal = document.getElementById('addSekolahModal');
-    modal.classList.remove('show');
+    document.getElementById('addSekolahModal').classList.remove('show');
 }
 
 async function loadSekolahOptions(select, jalur) {
