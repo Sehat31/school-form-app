@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distribusi - Portal SPPG Jatian</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/distribusi.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i data-lucide="truck" class="logo-icon"></i>
+                <h1>Rute Distribusi SPPG Jatian</h1>
+            </div>
+            <a href="index.html" class="btn btn-outline btn-sm">
+                <i data-lucide="arrow-left"></i> Kembali
+            </a>
+        </div>
+    </header>
+
+    <main class="distribusi-main">
+        <!-- Search Bar -->
+        <div class="search-section">
+            <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="searchSekolah" placeholder="Cari sekolah..." oninput="filterSekolah()">
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card jalur-selatan">
+                <h3>🚌 Jalur Selatan</h3>
+                <div class="summary-stats">
+                    <div class="stat">
+                        <span class="stat-label">Sekolah</span>
+                        <span class="stat-value" id="count-selatan">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total PK</span>
+                        <span class="stat-value" id="total-selatan-pk">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total PB</span>
+                        <span class="stat-value" id="total-selatan-pb">0</span>
+                    </div>
+                </div>
+                <div class="grand-total">
+                    Grand Total: <span id="total-selatan">0</span>
+                </div>
+            </div>
+
+            <div class="summary-card jalur-utara">
+                <h3>🚌 Jalur Utara</h3>
+                <div class="summary-stats">
+                    <div class="stat">
+                        <span class="stat-label">Sekolah</span>
+                        <span class="stat-value" id="count-utara">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total PK</span>
+                        <span class="stat-value" id="total-utara-pk">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total PB</span>
+                        <span class="stat-value" id="total-utara-pb">0</span>
+                    </div>
+                </div>
+                <div class="grand-total">
+                    Grand Total: <span id="total-utara">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribution Lists -->
+        <div class="distribution-grid">
+            <!-- Jalur Selatan -->
+            <div class="distribution-panel">
+                <div class="panel-header">
+                    <h3>🚌 DISTRIBUSI JALUR SELATAN</h3>
+                </div>
+                <div class="table-header">
+                    <span>SEKOLAH</span>
+                    <span>PK</span>
+                    <span>PB</span>
+                    <span>TOTAL</span>
+                </div>
+                <div class="sekolah-list" id="list-selatan" ondrop="drop(event, 'Selatan')" ondragover="allowDrop(event)">
+                    <!-- Data will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Jalur Utara -->
+            <div class="distribution-panel">
+                <div class="panel-header">
+                    <h3>🚌 DISTRIBUSI JALUR UTARA</h3>
+                </div>
+                <div class="table-header">
+                    <span>SEKOLAH</span>
+                    <span>PK</span>
+                    <span>PB</span>
+                    <span>TOTAL</span>
+                </div>
+                <div class="sekolah-list" id="list-utara" ondrop="drop(event, 'Utara')" ondragover="allowDrop(event)">
+                    <!-- Data will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Sekolah Belum Masuk Distribusi -->
+        <div class="belum-distribusi-section">
+            <div class="panel-header">
+                <h3>📋 SEKOLAH BELUM MASUK RUTE</h3>
+            </div>
+            <div class="sekolah-list" id="list-belum">
+                <!-- Data will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Grand Total -->
+        <div class="grand-total-section">
+            <h2> TOTAL KESELURUHAN</h2>
+            <div class="grand-total-stats">
+                <div class="grand-stat">
+                    <span class="grand-stat-label">Total PK</span>
+                    <span class="grand-stat-value" id="grand-total-pk">0</span>
+                </div>
+                <div class="grand-stat">
+                    <span class="grand-stat-label">Total PB</span>
+                    <span class="grand-stat-value" id="grand-total-pb">0</span>
+                </div>
+                <div class="grand-stat">
+                    <span class="grand-stat-label">Grand Total</span>
+                    <span class="grand-stat-value" id="grand-total">0</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i data-lucide="check-circle" id="toastIcon"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/distribusi.js"></script>
+</body>
+</html>
