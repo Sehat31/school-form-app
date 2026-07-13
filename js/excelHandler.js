@@ -1,31 +1,30 @@
 // ============================================
-// EXCEL HANDLER
+// EXCEL HANDLER - PENERJEMAH FILE EXCEL
 // ============================================
-
 let selectedFile = null;
 let parsedPMData = [];
 let parsedGuruData = [];
 
 // Header Template yang WAJIB (Exact Match)
 const EXPECTED_PM_HEADERS = [
-    'NIK (16 Digit)', 
-    'NISN (10 Digit)', 
-    'NAMA LENGKAP (Sesuai Akta/KTP)', 
-    'TEMPAT LAHIR (Kota/Kabupaten)', 
-    'TANGGAL LAHIR (dd-mm-yyyy)', 
-    'JENIS KELAMIN (L/P)', 
-    'NAMA ORANG TUA/WALI (Ayah/Ibu/Wali)', 
-    'KELAS (Contoh: 1,7,10)', 
+    'NIK (16 Digit)',
+    'NISN (10 Digit)',
+    'NAMA LENGKAP (Sesuai Akta/KTP)',
+    'TEMPAT LAHIR (Kota/Kabupaten)',
+    'TANGGAL LAHIR (dd-mm-yyyy)',
+    'JENIS KELAMIN (L/P)',
+    'NAMA ORANG TUA/WALI (Ayah/Ibu/Wali)',
+    'KELAS (Contoh: 1,7,10)',
     'KETERANGAN (Opsional)'
 ];
 
 const EXPECTED_GURU_HEADERS = [
-    'NIK (16 Digit)', 
-    'NAMA LENGKAP (Sesuai KTP)', 
-    'TEMPAT LAHIR (Kota/Kabupaten)', 
-    'TANGGAL LAHIR (dd-mm-yyyy)', 
-    'JENIS KELAMIN (L/P)', 
-    'JABATAN (Guru/Tendik)', 
+    'NIK (16 Digit)',
+    'NAMA LENGKAP (Sesuai KTP)',
+    'TEMPAT LAHIR (Kota/Kabupaten)',
+    'TANGGAL LAHIR (dd-mm-yyyy)',
+    'JENIS KELAMIN (L/P)',
+    'JABATAN (Guru/Tendik)',
     'KETERANGAN (Opsional)'
 ];
 
@@ -70,7 +69,7 @@ async function downloadMBGTemplate() {
     });
 
     wsPM.columns = [
-        { width: 20 }, { width: 15 }, { width: 30 }, { width: 20 }, 
+        { width: 20 }, { width: 15 }, { width: 30 }, { width: 20 },
         { width: 18 }, { width: 15 }, { width: 25 }, { width: 15 }, { width: 20 }
     ];
 
@@ -105,7 +104,7 @@ async function downloadMBGTemplate() {
     });
 
     wsGuru.columns = [
-        { width: 20 }, { width: 35 }, { width: 20 }, { width: 18 }, 
+        { width: 20 }, { width: 35 }, { width: 20 }, { width: 18 },
         { width: 15 }, { width: 20 }, { width: 20 }
     ];
 
@@ -161,9 +160,9 @@ function handleDrop(event) {
 function validateHeaders(actualHeaders, expectedHeaders, sheetName) {
     const missingOrWrong = expectedHeaders.filter(exp => !actualHeaders.includes(exp));
     if (missingOrWrong.length > 0) {
-        return { 
-            valid: false, 
-            message: `Header tidak sesuai di sheet "${sheetName}"!\n\nKolom yang hilang/salah:\n• ${missingOrWrong.join('\n• ')}\n\n⚠️ JANGAN ubah nama header template. Download ulang template jika perlu.` 
+        return {
+            valid: false,
+            message: `Header tidak sesuai di sheet "${sheetName}"!\n\nKolom yang hilang/salah:\n• ${missingOrWrong.join('\n• ')}\n\n⚠️ JANGAN ubah nama header template. Download ulang template jika perlu.`
         };
     }
     return { valid: true };
@@ -284,40 +283,33 @@ function processMBGFile(file) {
             // --- PARSE & VALIDASI PM (SISWA) ---
             if (pmSheetName) {
                 const pmSheet = workbook.Sheets[pmSheetName];
-                // defval: "" memastikan sel kosong terbaca sebagai string kosong, bukan undefined
                 const pmJson = XLSX.utils.sheet_to_json(pmSheet, { defval: "", dateNF: 'dd-mm-yyyy' });
                 
                 if (pmJson.length > 0) {
-                    // 1. Validasi Header
                     const actualHeaders = Object.keys(pmJson[0]);
                     const headerCheck = validateHeaders(actualHeaders, EXPECTED_PM_HEADERS, pmSheetName);
                     if (!headerCheck.valid) {
                         validationErrors.push(headerCheck.message);
                     } else {
-                        // 2. Validasi KELAS, NIK, dan Baris Contoh
                         let invalidNIKCount = 0;
                         let invalidNIKList = [];
                         let allNIKs = [];
 
                         pmJson.forEach((row, index) => {
-                            const rowIndex = index + 2; // Excel row starts at 1, header is 1, so data starts at 2
+                            const rowIndex = index + 2;
                             
-                            // Validasi Baris Contoh
                             const exampleCheck = validateExampleRows(row, rowIndex, pmSheetName);
                             if (!exampleCheck.valid) {
                                 validationErrors.push(exampleCheck.message);
                             }
                             
-                            // Validasi KELAS
                             const kelasCheck = validateKelas(row['KELAS (Contoh: 1,7,10)'], rowIndex);
                             if (!kelasCheck.valid) {
                                 validationErrors.push(kelasCheck.message);
                             } else {
-                                // Normalisasi nilai kelas menjadi string angka saja
                                 row['KELAS (Contoh: 1,7,10)'] = String(kelasCheck.value);
                             }
 
-                            // Validasi NIK
                             const nik = String(row['NIK (16 Digit)'] || '').trim();
                             if (nik) {
                                 allNIKs.push({ nik, sheet: 'PM', row: rowIndex });
@@ -331,7 +323,6 @@ function processMBGFile(file) {
                             }
                         });
 
-                        // Cek Duplikat NIK dalam file
                         const nikCount = {};
                         allNIKs.forEach(item => { nikCount[item.nik] = (nikCount[item.nik] || 0) + 1; });
                         
@@ -369,13 +360,11 @@ function processMBGFile(file) {
                 const guruJson = XLSX.utils.sheet_to_json(guruSheet, { defval: "", dateNF: 'dd-mm-yyyy' });
                 
                 if (guruJson.length > 0) {
-                    // 1. Validasi Header
                     const actualHeaders = Object.keys(guruJson[0]);
                     const headerCheck = validateHeaders(actualHeaders, EXPECTED_GURU_HEADERS, guruSheetName);
                     if (!headerCheck.valid) {
                         validationErrors.push(headerCheck.message);
                     } else {
-                        // 2. Validasi NIK dan Baris Contoh
                         let invalidNIKCount = 0;
                         let invalidNIKList = [];
                         let allNIKs = [];
@@ -383,7 +372,6 @@ function processMBGFile(file) {
                         guruJson.forEach((row, index) => {
                             const rowIndex = index + 2;
                             
-                            // Validasi Baris Contoh
                             const exampleCheck = validateExampleRows(row, rowIndex, guruSheetName);
                             if (!exampleCheck.valid) {
                                 validationErrors.push(exampleCheck.message);
@@ -435,8 +423,8 @@ function processMBGFile(file) {
 
             // --- HASIL VALIDASI AKHIR ---
             if (validationErrors.length > 0) {
-                let toastMessage = '⚠️ UPLOAD DITOLAK! \n\nFile tidak valid. Mohon perbaiki:\n\n';
-                toastMessage += validationErrors.slice(0, 4).join('\n\n'); // Tampilkan max 4 error agar toast tidak terlalu panjang
+                let toastMessage = '⚠️ UPLOAD DITOLAK!\n\nFile tidak valid. Mohon perbaiki:\n\n';
+                toastMessage += validationErrors.slice(0, 4).join('\n\n');
                 
                 if (validationErrors.length > 4) {
                     toastMessage += `\n\n...dan ${validationErrors.length - 4} error lainnya.`;
@@ -446,11 +434,10 @@ function processMBGFile(file) {
                 
                 showToast(toastMessage, 'error');
                 
-                // RESET DATA AGAR TIDAK BISA DI-UPLOAD
                 parsedPMData = [];
                 parsedGuruData = [];
                 selectedFile = null;
-                removeFile(); // Kembalikan UI ke keadaan awal
+                removeFile();
                 return;
             } else {
                 const totalRows = parsedPMData.length + parsedGuruData.length;
@@ -472,7 +459,7 @@ function processMBGFile(file) {
 }
 
 /**
- * Render PM Preview
+ * Render PM Preview - DIPERBAIKI (hapus syntax error h = >)
  */
 function renderPMPreview(data) {
     const container = document.getElementById('pmPreview');
@@ -489,6 +476,7 @@ function renderPMPreview(data) {
 
     const headers = Object.keys(data[0]);
     let html = '<table><thead><tr>';
+    // DIPERBAIKI: h => bukan h = >
     headers.forEach(h => { html += `<th>${h}</th>`; });
     html += '</tr></thead><tbody>';
 
@@ -508,7 +496,7 @@ function renderPMPreview(data) {
 }
 
 /**
- * Render Guru Preview
+ * Render Guru Preview - DIPERBAIKI (hapus syntax error h = >)
  */
 function renderGuruPreview(data) {
     const container = document.getElementById('guruPreview');
@@ -525,6 +513,7 @@ function renderGuruPreview(data) {
 
     const headers = Object.keys(data[0]);
     let html = '<table><thead><tr>';
+    // DIPERBAIKI: h => bukan h = >
     headers.forEach(h => { html += `<th>${h}</th>`; });
     html += '</tr></thead><tbody>';
 

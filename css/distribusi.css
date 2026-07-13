@@ -1,9 +1,14 @@
+/* ============================================
+   DISTRIBUSI PORTAL SPPG - STYLESHEET
+   ============================================ */
+
 .distribusi-main {
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px;
 }
 
+/* Security Notice */
 .security-notice {
     background: #fef3c7;
     border: 2px solid #f59e0b;
@@ -17,10 +22,7 @@
     font-weight: 500;
 }
 
-.security-notice i {
-    width: 20px;
-    height: 20px;
-}
+.security-notice i { width: 20px; height: 20px; }
 
 .btn-link {
     background: none;
@@ -33,10 +35,45 @@
     padding: 0;
 }
 
-.btn-link:hover {
-    color: #78350f;
+.btn-link:hover { color: #78350f; }
+
+/* Mobile Download Buttons */
+.mobile-download-buttons {
+    display: none;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
+.btn-download {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.btn-download:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-download i { width: 18px; height: 18px; }
+
+/* ============================================
+   SUMMARY GRID (STATISTIK)
+   ============================================ */
 .summary-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -47,99 +84,86 @@
 .summary-card {
     background: var(--bg-card);
     border-radius: var(--radius);
-    padding: 14px;
+    padding: 20px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
+    border-left-width: 6px;
 }
 
-.jalur-selatan {
-    border-left: 4px solid #f59e0b;
-}
-
-.jalur-utara {
-    border-left: 4px solid #3b82f6;
-}
+.jalur-selatan { border-left-color: #f59e0b; }
+.jalur-utara { border-left-color: #3b82f6; }
 
 .summary-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
     border-bottom: 2px solid var(--border);
 }
 
-.summary-header i {
-    width: 18px;
-    height: 18px;
-    color: var(--primary);
-}
-
-.summary-header h3 {
-    margin: 0;
-    font-size: 0.95rem;
-    color: var(--text);
-}
+.summary-header i { width: 24px; height: 24px; color: var(--primary); }
+.summary-header h3 { margin: 0; font-size: 1.1rem; color: var(--text); font-weight: 700; }
 
 .summary-stats {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-
-.summary-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 12px;
+    width: 100%;
 }
 
 .summary-item {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 8px;
-    background: var(--bg);
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
     border-radius: var(--radius-sm);
+    text-align: center;
+    background: #f1f5f9;
+    transition: transform 0.2s;
 }
 
-.summary-item.pk {
-    background: #d1fae5;
-}
-
-.summary-item.pb {
-    background: #dbeafe;
-}
-
+.summary-item:hover { transform: translateY(-2px); }
+.summary-item.pk { background: #dcfce7; }
+.summary-item.pb { background: #dbeafe; }
 .summary-item.grand {
-    background: var(--primary-light);
-    border: 1px solid var(--primary);
+    background: #eff6ff;
+    border: 1px solid #3b82f6;
+}
+
+.summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
 }
 
 .summary-label {
-    font-size: 0.7rem;
-    color: var(--text-light);
+    font-size: 0.85rem;
+    color: #64748b;
     font-weight: 500;
+    margin-bottom: 4px;
+    text-align: center;
 }
 
 .summary-value {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text);
+    color: #1e293b;
+    text-align: center;
 }
 
-.summary-item.pk .summary-value {
-    color: #065f46;
-}
-
-.summary-item.pb .summary-value {
-    color: #1e40af;
-}
-
+.summary-item.pk .summary-value { color: #166534; }
+.summary-item.pb .summary-value { color: #1e40af; }
 .summary-item.grand .summary-value {
-    color: var(--primary);
-    font-size: 1.4rem;
+    color: #2563eb;
+    font-size: 1.8rem;
 }
 
+/* ============================================
+   DISTRIBUTION GRID (TABEL RUTE)
+   ============================================ */
 .distribution-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -158,7 +182,7 @@
 .panel-header {
     background: var(--primary);
     color: white;
-    padding: 10px 14px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -166,27 +190,26 @@
 
 .panel-header h3 {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    font-weight: 600;
 }
 
-.panel-header h3 i {
-    width: 16px;
-    height: 16px;
-}
+.panel-header h3 i { width: 18px; height: 18px; }
 
 .table-header {
     display: grid;
-    grid-template-columns: 30px 2fr 70px 70px 60px 35px;
-    gap: 6px;
-    padding: 8px 14px;
+    grid-template-columns: 30px 2fr 80px 80px 80px 35px;
+    gap: 8px;
+    padding: 10px 16px;
     background: var(--bg);
     font-weight: 600;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--text-light);
     border-bottom: 2px solid var(--border);
+    text-align: center;
 }
 
 .sekolah-list {
@@ -197,41 +220,28 @@
 
 .sekolah-item {
     display: grid;
-    grid-template-columns: 30px 2fr 70px 70px 60px 35px;
-    gap: 6px;
-    padding: 10px 14px;
+    grid-template-columns: 30px 2fr 80px 80px 80px 35px;
+    gap: 8px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     align-items: center;
-    cursor: move;
     transition: all 0.2s;
     background: var(--bg-card);
 }
 
-.sekolah-item:hover {
-    background: var(--primary-light);
-}
-
-.sekolah-item.dragging {
-    opacity: 0.5;
-    background: var(--warning-light);
-}
+.sekolah-item:hover { background: var(--primary-light); }
+.sekolah-item.dragging { opacity: 0.5; background: var(--warning-light); }
 
 .drag-handle {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-light);
+    color: #64748b;
     cursor: grab;
 }
 
-.drag-handle:active {
-    cursor: grabbing;
-}
-
-.drag-handle i {
-    width: 14px;
-    height: 14px;
-}
+.drag-handle:active { cursor: grabbing; }
+.drag-handle i { width: 16px; height: 16px; }
 
 .sekolah-info {
     display: flex;
@@ -241,7 +251,7 @@
 }
 
 .sekolah-info strong {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text);
     font-weight: 600;
     white-space: nowrap;
@@ -249,20 +259,25 @@
     text-overflow: ellipsis;
 }
 
-.sekolah-info small {
-    font-size: 0.7rem;
-    color: var(--text-light);
+.sekolah-info small { font-size: 0.7rem; color: #475569; font-weight: 500; }
+
+.porsi-input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .porsi-input input {
     width: 100%;
-    padding: 5px 2px;
+    max-width: 70px;
+    padding: 6px 8px;
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
     text-align: center;
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 700;
     background: var(--bg-card);
+    margin: 0 auto;
 }
 
 .porsi-input input:focus {
@@ -271,16 +286,17 @@
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
-.porsi-input input[readonly] {
-    background: var(--bg);
-    cursor: not-allowed;
-}
+.porsi-input input[readonly] { background: #f1f5f9; cursor: not-allowed; color: #475569; }
 
 .total-porsi {
     text-align: center;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
 }
 
 .btn-hapus {
@@ -296,99 +312,192 @@
     justify-content: center;
 }
 
-.btn-hapus:hover {
-    background: var(--danger-light);
-    color: var(--danger);
-}
+.btn-hapus:hover { background: var(--danger-light); color: var(--danger); }
+.btn-hapus i { width: 14px; height: 14px; }
 
-.btn-hapus i {
-    width: 14px;
-    height: 14px;
-}
-
+/* ============================================
+   DAFTAR SEKOLAH (COMPACT & TOMBOL JALUR)
+   ============================================ */
 .belum-item {
-    grid-template-columns: 30px 2fr 160px 80px;
-    display: grid;
-    gap: 6px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    align-items: center;
-    cursor: move;
-    transition: all 0.2s;
-    background: var(--bg-card);
+    grid-template-columns: 30px 1.8fr auto auto !important;
+    padding: 10px 14px !important;
+    margin-bottom: 4px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    gap: 12px !important;
+    background: white !important;
 }
 
 .belum-item:hover {
-    background: var(--primary-light);
+    background: #f8fafc !important;
+    border-color: var(--primary) !important;
 }
 
-.porsi-info {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
+.belum-item .drag-handle { opacity: 0.4; }
+.belum-item .drag-handle i { width: 14px !important; height: 14px !important; }
+.belum-item .sekolah-info strong { font-size: 0.82rem !important; line-height: 1.2; }
+.belum-item .sekolah-info small { font-size: 0.68rem !important; color: #94a3b8; }
 
-.porsi-badge {
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-size: 0.7rem;
+/* Status Badge */
+.status-badge {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px !important;
+    font-size: 0.68rem !important;
+    margin-top: 4px !important;
+    border-radius: 12px !important;
+    border-width: 1px !important;
+    box-shadow: none !important;
     font-weight: 600;
 }
 
+.status-badge i { width: 12px !important; height: 12px !important; }
+
+.status-badge.pending {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px dashed #f59e0b !important;
+}
+
+/* Tombol Pilih Jalur */
+.jalur-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-jalur {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-jalur i { width: 14px; height: 14px; }
+
+.btn-jalur.btn-selatan {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #78350f;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.btn-jalur.btn-selatan:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.4);
+}
+
+.btn-jalur.btn-utara {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    color: #1e3a8a;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.btn-jalur.btn-utara:hover {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+}
+
+/* Badge Info Per Kelas */
+.belum-item .porsi-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    align-items: flex-end !important;
+}
+
+.belum-item .porsi-badge {
+    padding: 3px 8px !important;
+    font-size: 0.68rem !important;
+    border-radius: 6px !important;
+    border-width: 1px !important;
+    box-shadow: none !important;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .porsi-badge.pk {
-    background: #d1fae5;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     color: #065f46;
+    border-color: #10b981;
 }
 
 .porsi-badge.pb {
-    background: #dbeafe;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #1e40af;
+    border-color: #3b82f6;
 }
 
-.porsi-badge.total {
-    background: #fef3c7;
+.porsi-badge.guru {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #92400e;
+    border-color: #f59e0b;
 }
 
-.btn-tambah button {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    padding: 5px 10px;
-    font-size: 0.75rem;
+/* Sekolah yang sudah di rute */
+.belum-item.already-in-route {
+    background: #fafafa !important;
+    border: 1px solid #e5e7eb !important;
+    border-left: 3px solid !important;
+    opacity: 0.85;
 }
 
+.belum-item.already-in-route.jalur-selatan { border-left-color: #f59e0b !important; }
+.belum-item.already-in-route.jalur-utara { border-left-color: #3b82f6 !important; }
+.belum-item.already-in-route .drag-handle { opacity: 0.3; }
+
+/* Sekolah belum masuk rute */
+.belum-item:not(.already-in-route) {
+    border: 1px dashed #fcd34d !important;
+    background: #fffef5 !important;
+}
+
+.belum-item:not(.already-in-route):hover {
+    border-style: solid !important;
+    border-color: #f59e0b !important;
+    background: #fffbeb !important;
+}
+
+/* ============================================
+   GRAND TOTAL SECTION
+   ============================================ */
 .grand-total-section {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
-    padding: 18px;
+    padding: 24px;
     border-radius: var(--radius);
     text-align: center;
     box-shadow: var(--shadow-lg);
 }
 
 .grand-total-section h2 {
-    margin: 0 0 14px 0;
-    font-size: 1rem;
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
 }
 
-.grand-total-section h2 i {
-    width: 18px;
-    height: 18px;
-}
+.grand-total-section h2 i { width: 20px; height: 20px; }
 
 .grand-total-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 12px;
 }
 
 .grand-stat {
-    padding: 10px;
+    padding: 12px;
     background: rgba(255,255,255,0.1);
     border-radius: var(--radius-sm);
     backdrop-filter: blur(10px);
@@ -396,27 +505,24 @@
 
 .grand-stat-label {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     opacity: 0.9;
     margin-bottom: 4px;
 }
 
 .grand-stat-value {
     display: block;
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 700;
 }
 
-.grand-stat-value.pk {
-    color: #86efac;
-}
+.grand-stat-value.pk { color: #86efac; }
+.grand-stat-value.pb { color: #93c5fd; }
 
-.grand-stat-value.pb {
-    color: #93c5fd;
-}
-
-.form-select,
-.form-control {
+/* ============================================
+   FORMS & MODALS
+   ============================================ */
+.form-select, .form-control {
     width: 100%;
     padding: 9px;
     border: 1.5px solid var(--border);
@@ -440,67 +546,252 @@
     font-size: 0.8rem;
 }
 
-.password-info i {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-}
+.password-info i { width: 16px; height: 16px; flex-shrink: 0; }
 
+/* ============================================
+   TOAST NOTIFICATION
+   ============================================ */
 .toast {
     position: fixed;
     bottom: 24px;
     right: 24px;
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 20px;
     background: var(--text);
     color: white;
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-lg);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: 500;
-    z-index: 1000;
+    z-index: 9999;
     transform: translateY(100px);
     opacity: 0;
     transition: all 0.3s ease;
+    max-width: 420px;
 }
 
-.toast.show {
-    transform: translateY(0);
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+
+.toast i[data-lucide] {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.toast-close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: auto;
+    opacity: 0.7;
+    transition: opacity 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.toast-close-btn:hover {
     opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.toast.success {
-    background: var(--success);
+.toast-close-btn i {
+    width: 18px;
+    height: 18px;
+    margin-top: 0;
 }
 
-.toast.error {
-    background: var(--danger);
+/* ============================================
+   ANIMASI TRUK DISTRIBUSI MBG
+   ============================================ */
+.truck-animation-container {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(180deg, #1e40af 0%, #3b82f6 100%);
+    margin-bottom: 20px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
 }
 
-.toast i {
-    width: 16px;
-    height: 16px;
+.truck-wrapper {
+    position: absolute;
+    top: 60%;
+    left: -200px;
+    transform: translateY(-50%);
+    animation: truckMove 8s linear infinite;
 }
 
-@media (max-width: 1024px) {
-    .summary-grid,
-    .distribution-grid {
-        grid-template-columns: 1fr;
+@keyframes truckMove {
+    0% { left: -200px; }
+    100% { left: 100%; }
+}
+
+/* Support untuk Gambar Truk */
+.custom-truck-img {
+    width: 160px;
+    height: auto;
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
+    animation: truckBounce 0.4s ease-in-out infinite alternate;
+}
+
+/* Fallback Emoji jika gambar tidak ada */
+.truck-emoji {
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    animation: truckBounce 0.5s ease-in-out infinite;
+}
+
+@keyframes truckBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-4px); }
+}
+
+/* Efek Asap */
+.truck-smoke {
+    position: absolute;
+    left: -20px;
+    bottom: 10px;
+    width: 80px;
+    height: 40px;
+    pointer-events: none;
+}
+
+.smoke {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(220,220,220,0.6) 40%, rgba(180,180,180,0.3) 70%, transparent 100%);
+    border-radius: 50%;
+    animation: smokePuff 1.2s ease-out infinite;
+    filter: blur(1.5px);
+}
+
+.smoke:nth-child(1) { animation-delay: 0s; left: 0; bottom: 5px; }
+.smoke:nth-child(2) { animation-delay: 0.25s; left: 5px; bottom: 8px; }
+.smoke:nth-child(3) { animation-delay: 0.5s; left: 10px; bottom: 3px; }
+
+@keyframes smokePuff {
+    0% { opacity: 0.8; transform: scale(0.4) translate(0, 0); }
+    30% { opacity: 0.7; transform: scale(0.8) translate(-15px, -5px); }
+    60% { opacity: 0.5; transform: scale(1.3) translate(-30px, -12px); }
+    100% { opacity: 0; transform: scale(2) translate(-50px, -20px); }
+}
+
+/* Garis Jalan */
+.road-lines {
+    position: absolute;
+    bottom: 15px;
+    left: 0; right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, #fff 0px, #fff 30px, transparent 30px, transparent 60px);
+    animation: roadMove 0.8s linear infinite;
+}
+
+@keyframes roadMove {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-60px); }
+}
+
+/* Label Teks */
+.truck-label {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN (GABUNGAN)
+   ============================================ */
+@media (max-width: 768px) {
+    .distribusi-main { padding: 12px; }
+    .mobile-download-buttons { display: flex; }
+    #exportContent, #distributionTables { display: grid !important; }
+    .summary-grid, .distribution-grid { grid-template-columns: 1fr; }
+    
+    .table-header {
+        grid-template-columns: 30px 1.8fr 65px 65px 65px 35px;
+        font-size: 0.65rem;
+        padding: 8px 10px;
     }
     
     .sekolah-item {
-        grid-template-columns: 30px 1.5fr 65px 65px 55px 35px;
-        font-size: 0.75rem;
-    }
-    
-    .belum-item {
-        grid-template-columns: 30px 1.5fr 140px 75px;
-    }
-    
-    .grand-total-stats {
-        grid-template-columns: 1fr;
+        grid-template-columns: 30px 1.8fr 65px 65px 65px 35px;
+        padding: 10px 10px;
         gap: 6px;
     }
+    
+    .sekolah-info { min-width: 0; overflow: visible; }
+    .sekolah-info strong {
+        font-size: 0.75rem;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        line-height: 1.3;
+    }
+    .sekolah-info small { font-size: 0.65rem; }
+    
+    .porsi-input input { max-width: 55px; padding: 4px 2px; font-size: 0.75rem; }
+    .total-porsi { font-size: 0.8rem; }
+    
+    /* Daftar Sekolah Mobile */
+    .belum-item {
+        grid-template-columns: 25px 1fr auto !important;
+        padding: 8px 10px !important;
+        gap: 8px !important;
+    }
+    
+    .belum-item .porsi-info {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 2px !important;
+        align-items: center !important;
+    }
+    
+    .belum-item .porsi-badge {
+        padding: 2px 6px !important;
+        font-size: 0.6rem !important;
+    }
+    
+    .belum-item .status-badge {
+        padding: 2px 8px !important;
+        font-size: 0.62rem !important;
+    }
+    
+    .jalur-buttons {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .btn-jalur {
+        padding: 4px 8px;
+        font-size: 0.65rem;
+    }
+    
+    .grand-total-stats { grid-template-columns: 1fr; gap: 6px; }
+    .panel-header { padding: 8px 12px; }
+    .panel-header h3 { font-size: 0.8rem; }
+    
+    /* Animasi Truk Mobile */
+    .truck-animation-container { height: 80px; }
+    .custom-truck-img { width: 100px; }
+    .truck-emoji { font-size: 2rem; }
+    .truck-label { font-size: 0.75rem; top: 5px; }
 }

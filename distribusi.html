@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rute Distribusi SPPG Jatian</title>
-    
+    <title>Rute Distribusi - Portal SPPG Jatian</title>
     <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="favicon.png">
-    
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/distribusi.css">
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -28,12 +26,36 @@
     </header>
 
     <main class="distribusi-main">
+        <!-- Animasi Truk -->
+        <div class="truck-animation-container">
+            <div class="truck-label">🚚 Distribusi Makanan Bergizi Gratis - SPPG Jatian</div>
+            <div class="truck-wrapper">
+                <img src="images/truck.png" alt="Truk MBG" class="custom-truck-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                <div class="truck-emoji" style="display:none;">🚛</div>
+                <div class="truck-smoke">
+                    <div class="smoke"></div>
+                    <div class="smoke"></div>
+                    <div class="smoke"></div>
+                </div>
+            </div>
+            <div class="road-lines"></div>
+        </div>
+
+        <!-- Security Notice -->
         <div class="security-notice" id="securityNotice">
             <i data-lucide="lock"></i>
             <span>Mode Baca Saja - <button onclick="unlockDistribusi()" class="btn-link">Klik untuk Edit</button></span>
         </div>
 
-        <div class="summary-grid">
+        <!-- Mobile Download Buttons -->
+        <div class="mobile-download-buttons">
+            <button class="btn-download" onclick="exportToPNG()"><i data-lucide="image"></i> PNG</button>
+            <button class="btn-download" onclick="exportToExcel()"><i data-lucide="file-spreadsheet"></i> Excel</button>
+            <button class="btn-download" onclick="exportToText()"><i data-lucide="file-text"></i> Text</button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid" id="exportContent">
             <div class="summary-card jalur-selatan">
                 <div class="summary-header">
                     <i data-lucide="bus"></i>
@@ -62,7 +84,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="summary-card jalur-utara">
                 <div class="summary-header">
                     <i data-lucide="bus"></i>
@@ -93,68 +114,61 @@
             </div>
         </div>
 
-        <div class="distribution-grid">
+        <!-- Distribution Tables -->
+        <div class="distribution-grid" id="distributionTables">
             <div class="distribution-panel">
                 <div class="panel-header">
                     <h3><i data-lucide="truck"></i> DISTRIBUSI JALUR SELATAN</h3>
                     <button class="btn btn-sm btn-primary" onclick="showAddSekolahModal('Selatan')" id="btnTambahSelatan" style="display:none;">
-                        <i data-lucide="plus"></i> Tambah Sekolah
+                        <i data-lucide="plus"></i> Tambah
                     </button>
                 </div>
                 <div class="table-header">
-                    <span style="width: 30px;"></span>
+                    <span style="width:30px"></span>
                     <span>SEKOLAH</span>
-                    <span style="width: 70px;">PK</span>
-                    <span style="width: 70px;">PB</span>
-                    <span style="width: 60px;">TOTAL</span>
-                    <span style="width: 35px;"></span>
+                    <span style="width:70px">PK</span>
+                    <span style="width:70px">PB</span>
+                    <span style="width:60px">TOTAL</span>
+                    <span style="width:35px"></span>
                 </div>
-                <div class="sekolah-list" id="list-selatan" ondrop="drop(event, 'Selatan')" ondragover="allowDrop(event)">
-                    <div class="loading-placeholder">
-                        <i data-lucide="loader-2" class="spin"></i>
-                        <p>Memuat data...</p>
-                    </div>
+                <div class="sekolah-list" id="list-selatan" ondrop="drop(event,'Selatan')" ondragover="allowDrop(event)">
+                    <div class="loading-placeholder"><i data-lucide="loader-2" class="spin"></i><p>Memuat data...</p></div>
                 </div>
             </div>
-
             <div class="distribution-panel">
                 <div class="panel-header">
                     <h3><i data-lucide="truck"></i> DISTRIBUSI JALUR UTARA</h3>
                     <button class="btn btn-sm btn-primary" onclick="showAddSekolahModal('Utara')" id="btnTambahUtara" style="display:none;">
-                        <i data-lucide="plus"></i> Tambah Sekolah
+                        <i data-lucide="plus"></i> Tambah
                     </button>
                 </div>
                 <div class="table-header">
-                    <span style="width: 30px;"></span>
+                    <span style="width:30px"></span>
                     <span>SEKOLAH</span>
-                    <span style="width: 70px;">PK</span>
-                    <span style="width: 70px;">PB</span>
-                    <span style="width: 60px;">TOTAL</span>
-                    <span style="width: 35px;"></span>
+                    <span style="width:70px">PK</span>
+                    <span style="width:70px">PB</span>
+                    <span style="width:60px">TOTAL</span>
+                    <span style="width:35px"></span>
                 </div>
-                <div class="sekolah-list" id="list-utara" ondrop="drop(event, 'Utara')" ondragover="allowDrop(event)">
-                    <div class="loading-placeholder">
-                        <i data-lucide="loader-2" class="spin"></i>
-                        <p>Memuat data...</p>
-                    </div>
+                <div class="sekolah-list" id="list-utara" ondrop="drop(event,'Utara')" ondragover="allowDrop(event)">
+                    <div class="loading-placeholder"><i data-lucide="loader-2" class="spin"></i><p>Memuat data...</p></div>
                 </div>
             </div>
         </div>
 
+        <!-- Daftar Sekolah -->
         <div class="card">
             <div class="section-title">
-                <i data-lucide="folder-plus"></i>
-                <h3>Sekolah Belum Masuk Rute</h3>
+                <i data-lucide="school"></i>
+                <h3>Daftar Sekolah</h3>
             </div>
-            <p class="section-desc">Drag & drop sekolah ke jalur Selatan atau Utara di atas</p>
-            <div class="sekolah-list horizontal" id="list-belum">
-                <div class="loading-placeholder">
-                    <i data-lucide="loader-2" class="spin"></i>
-                    <p>Memuat data...</p>
-                </div>
+            <p class="section-desc">Semua sekolah terdaftar. Klik tombol Selatan/Utara untuk menambahkan ke rute distribusi.</p>
+            <div class="sekolah-list" id="list-belum">
+                <div class="loading-placeholder"><i data-lucide="loader-2" class="spin"></i><p>Memuat data...</p></div>
             </div>
         </div>
 
+        <!-- Grand Total -->
         <div class="grand-total-section">
             <h2><i data-lucide="bar-chart-3"></i> TOTAL KESELURUHAN</h2>
             <div class="grand-total-stats">
@@ -174,13 +188,12 @@
         </div>
     </main>
 
+    <!-- Password Modal -->
     <div id="passwordModal" class="modal-overlay" onclick="closePasswordModal(event)">
-        <div class="modal-content" style="max-width: 400px;" onclick="event.stopPropagation()">
+        <div class="modal-content" style="max-width:400px;" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3><i data-lucide="lock"></i> Verifikasi Keamanan</h3>
-                <button class="btn-icon" onclick="closePasswordModal()">
-                    <i data-lucide="x"></i>
-                </button>
+                <button class="btn-icon" onclick="closePasswordModal()"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <div class="password-info">
@@ -189,25 +202,22 @@
                 </div>
                 <div class="form-group">
                     <label>Password:</label>
-                    <input type="password" id="passwordInput" placeholder="Verifikasi PIN untuk mengakses fitur ini" class="form-control">
+                    <input type="password" id="passwordInput" placeholder="Masukkan password" class="form-control" onkeypress="if(event.key==='Enter')verifyPassword()">
                 </div>
                 <div class="form-actions">
                     <button class="btn btn-outline" onclick="closePasswordModal()">Batal</button>
-                    <button class="btn btn-primary" onclick="verifyPassword()">
-                        <i data-lucide="unlock"></i> Verifikasi
-                    </button>
+                    <button class="btn btn-primary" onclick="verifyPassword()"><i data-lucide="unlock"></i> Verifikasi</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Add Sekolah Modal -->
     <div id="addSekolahModal" class="modal-overlay" onclick="closeAddSekolahModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3><i data-lucide="school"></i> Tambah Sekolah ke Distribusi</h3>
-                <button class="btn-icon" onclick="closeAddSekolahModal()">
-                    <i data-lucide="x"></i>
-                </button>
+                <h3><i data-lucide="school"></i> Tambah Sekolah</h3>
+                <button class="btn-icon" onclick="closeAddSekolahModal()"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -218,17 +228,17 @@
                 </div>
                 <div class="form-actions">
                     <button class="btn btn-outline" onclick="closeAddSekolahModal()">Batal</button>
-                    <button class="btn btn-primary" onclick="confirmAddSekolah()">
-                        <i data-lucide="plus"></i> Tambah
-                    </button>
+                    <button class="btn btn-primary" onclick="confirmAddSekolah()"><i data-lucide="plus"></i> Tambah</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Toast -->
     <div id="toast" class="toast">
         <i data-lucide="check-circle" id="toastIcon"></i>
         <span id="toastMessage"></span>
+        <button class="toast-close-btn" onclick="closeToast()" title="Tutup"><i data-lucide="x"></i></button>
     </div>
 
     <script src="js/supabaseClient.js"></script>

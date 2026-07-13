@@ -1,15 +1,18 @@
 // ============================================
 // SUPABASE CLIENT & DATABASE FUNCTIONS
 // ============================================
+
+// Konfigurasi Supabase
 const SUPABASE_URL = 'https://ngxnutcjejdxuqkirxvi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5neG51dGNqZWpkeHVxa2lyeHZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODE2NjUsImV4cCI6MjA5OTE1NzY2NX0.GvhbH_cdLnDeGTXpYuvdT7Q_Uo5cTwN-13rTs4Tn-DI';
 
-// Inisialisasi Client
+// Inisialisasi Client Supabase
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const db = supabaseClient;
 
 /**
- * Wrapper untuk query dengan retry otomatis (Penting untuk Free Plan)
+ * Wrapper untuk query dengan retry otomatis
+ * Penting untuk Supabase Free Plan yang sering "tidur"
  */
 async function queryWithRetry(queryFn, maxRetries = 3) {
     for (let i = 0; i < maxRetries; i++) {
@@ -20,6 +23,7 @@ async function queryWithRetry(queryFn, maxRetries = 3) {
         } catch (error) {
             console.warn(`Database attempt ${i + 1} failed:`, error.message);
             if (i === maxRetries - 1) {
+                // Semua retry gagal
                 if (typeof showToast === 'function') {
                     showToast('❌ Gagal koneksi ke database. Silakan refresh halaman.', 'error');
                 } else {
@@ -27,15 +31,16 @@ async function queryWithRetry(queryFn, maxRetries = 3) {
                 }
                 throw error;
             }
-            // Exponential backoff: 1s, 2s, 4s
+            // Tunggu sebelum retry (1 detik, 2 detik, 4 detik)
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
         }
     }
 }
 
 // ============================================
-// SCHOOL FUNCTIONS
+// SCHOOL FUNCTIONS (Fungsi untuk Data Sekolah)
 // ============================================
+
 async function insertSchool(data) {
     const { data: result, error } = await queryWithRetry(() =>
         db.from('sekolah').insert({
@@ -69,8 +74,9 @@ async function deleteSchool(id) {
 }
 
 // ============================================
-// PM MBG FUNCTIONS
+// PM MBG FUNCTIONS (Fungsi untuk Data Penerima Manfaat)
 // ============================================
+
 async function insertBulkPM(records) {
     if (records.length === 0) return;
     const { data, error } = await queryWithRetry(() =>
@@ -96,8 +102,9 @@ async function deletePM(id) {
 }
 
 // ============================================
-// GURU TENDIK FUNCTIONS
+// GURU TENDIK FUNCTIONS (Fungsi untuk Data Guru)
 // ============================================
+
 async function insertBulkGuru(records) {
     if (records.length === 0) return;
     const { data, error } = await queryWithRetry(() =>
@@ -123,8 +130,9 @@ async function deleteGuru(id) {
 }
 
 // ============================================
-// STORAGE FUNCTIONS
+// STORAGE FUNCTIONS (Fungsi untuk Upload File)
 // ============================================
+
 async function uploadFileToStorageWithMetadata(file, metadata, customFileName) {
     const fileExt = file.name.split('.').pop();
     const fileName = customFileName || `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;

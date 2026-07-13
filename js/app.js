@@ -9,7 +9,7 @@ let sensitiveDataUnlocked = false;
 let appPin = '2024'; // Fallback default jika tabel app_config belum dibuat
 
 // ============================================
-// INITIALIZATION
+// INITIALIZATION (HANYA 1x DOMContentLoaded)
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
     lucide.createIcons();
@@ -65,7 +65,7 @@ function checkPassword() {
         sessionStorage.setItem('sensitiveDataUnlocked', 'true');
         closePasswordModal();
         updateSecurityBar();
-        filterData(); // Re-render tabel agar data terbuka
+        filterData();
         loadUploadedFiles();
         showToast('✅ Akses diberikan! Data sensitif terbuka.', 'success');
     } else {
@@ -258,7 +258,7 @@ async function handleSubmit(event) {
     const phonePattern = /^(08|62)\d{8,13}$/;
     
     if (!phonePattern.test(nomorHpClean)) {
-        showToast('❌ Format Nomor HP tidak valid!\n\nContoh benar:\n• 081234567890\n• 6281234567890\n(Harus diawali 08 atau 62, total 10-15 angka)', 'error');
+        showToast(' Format Nomor HP tidak valid!\n\nContoh benar:\n• 081234567890\n• 6281234567890\n(Harus diawali 08 atau 62, total 10-15 angka)', 'error');
         return;
     }
     
@@ -388,9 +388,6 @@ async function loadSchoolInfo() {
         if (infoDisplay) infoDisplay.style.display = 'none';
     }
 }
-
-// (Pastikan fungsi uploadMBGFile, parseTanggalLahir, loadUploadedFiles, dll. 
-//  tetap ada di file ini atau di file excelHandler.js seperti sebelumnya)
 
 async function loadUploadedFiles() {
     const container = document.getElementById('uploadedFilesList');
@@ -566,7 +563,7 @@ function renderSekolahTable(row, idx) {
     const nomorHP = renderSensitiveData(row.nomor_hp, 'phone', row.id);
     const deleteBtn = sensitiveDataUnlocked 
         ? `<button class="btn-icon delete" title="Hapus" onclick="deleteSekolah(${row.id})"><i data-lucide="trash-2"></i></button>`
-        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu" onclick="showUnlockWarning()"><i data-lucide="lock"></i></button>`;
+        : `<button class="btn-icon delete" title=" Buka sensor dulu" onclick="showUnlockWarning()"><i data-lucide="lock"></i></button>`;
     
     return `
         <td>${idx + 1}</td>
@@ -667,7 +664,204 @@ async function deleteGuruData(id) {
 }
 
 // ============================================
-// EXPORT DATA
+// UPLOAD MBG FILE
+// ============================================
+async function uploadMBGFile() {
+    const selectNpsn = document.getElementById('select_npsn_mbg');
+    const npsn = selectNpsn ? selectNpsn.value : '';
+
+    if (!npsn) {
+        showToast('❌ Pilih sekolah terlebih dahulu!', 'error');
+        return;
+    }
+
+    if (!selectedFile || (parsedPMData.length === 0 && parsedGuruData.length === 0)) {
+        showToast('❌ Tidak ada data untuk diupload', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Mengupload...';
+    lucide.createIcons();
+
+    try {
+        const selectedOption = selectNpsn.options[selectNpsn.selectedIndex];
+        const sekolahId = selectedOption.dataset.sekolahId;
+        const sekolahName = selectedOption.textContent.split(' - ')[1] || 'Sekolah';
+
+        const allNIKsToUpload = [];
+        parsedPMData.forEach(r => {
+            const nik = String(r['NIK (16 Digit)'] || r.NIK || '').trim();
+            if (nik) allNIKsToUpload.push(nik);
+        });
+        parsedGuruData.forEach(r => {
+            const nik = String(r['NIK (16 Digit)'] || r.NIK || '').trim();
+            if (nik) allNIKsToUpload.push(nik);
+        });
+
+        if (allNIKsToUpload.length > 0) {
+            const { data: existingPM, error: pmError } = await db
+                .from('pm_mbg')
+                .select('nik, sekolah_id')
+                .in('nik', allNIKsToUpload);
+
+            if (pmError) console.error('Error cek PM:', pmError);
+
+            const { data: existingGuru, error: guruError } = await db
+                .from('guru_tendik')
+                .select('nik, sekolah_id')
+                .in('nik', allNIKsToUpload);
+
+            if (guruError) console.error('Error cek Guru:', guruError);
+
+            const allExisting = [...(existingPM || []), ...(existingGuru || [])];
+            const crossSchoolDuplicates = allExisting.filter(item => 
+                String(item.sekolah_id) !== String(sekolahId)
+            );
+
+            if (crossSchoolDuplicates.length > 0) {
+                const dupNIKs = crossSchoolDuplicates.map(d => d.nik).join(', ');
+                showToast(`❌ NIK sudah ada di sekolah lain! NIK: ${dupNIKs}`, 'error');
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="cloud-upload"></i> Upload & Simpan ke Database';
+                lucide.createIcons();
+                return;
+            }
+        }
+
+        const now = new Date();
+        const timestamp = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+        const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${now.toISOString().split('T')[0]}_${timestamp}.xlsx`;
+        await uploadFileToStorageWithMetadata(selectedFile, {
+            npsn: npsn,
+            sekolah_id: sekolahId,
+            sekolah_nama: sekolahName,
+            uploaded_at: new Date().toISOString()
+        }, fileName);
+
+        if (parsedPMData.length > 0) {
+            const pmRecords = parsedPMData.map(r => {
+                const namaLengkap = r['NAMA LENGKAP (Sesuai Akta/KTP)'] || r['NAMA LENGKAP'] || r['Nama Lengkap'] || r['nama_lengkap'] || r['nama'] || r['Nama'] || '';
+                const tempatLahir = r['TEMPAT LAHIR (Kota/Kabupaten)'] || r['TEMPAT LAHIR'] || r['Tempat Lahir'] || r['tempat_lahir'] || r['tempat'] || r['Tempat'] || '';
+                const tanggalLahirRaw = r['TANGGAL LAHIR (dd-mm-yyyy)'] || r['TANGGAL LAHIR'] || r['Tanggal Lahir'] || r['tanggal_lahir'] || r['tanggal'] || r['Tanggal'] || '';
+                const jenisKelamin = r['JENIS KELAMIN (L/P)'] || r['JENIS KELAMIN'] || r['Jenis Kelamin'] || r['jenis_kelamin'] || r['jk'] || r['JK'] || r['kelamin'] || '';
+                const namaOrangTua = r['NAMA ORANG TUA/WALI (Ayah/Ibu/Wali)'] || r['NAMA ORANG TUA/WALI'] || r['Nama Orang Tua/Wali'] || r['nama_orang_tua'] || r['orang_tua'] || r['Orang Tua'] || r['nama_ortu'] || r['Nama Orang Tua'] || '';
+                const kelas = r['KELAS (Contoh: 1,7,10)'] || r['KELAS'] || r['Kelas'] || r['kelas'] || r['K'] || r['TINGKAT'] || '';
+
+                return {
+                    sekolah_id: parseInt(sekolahId),
+                    npsn: npsn,
+                    nik: String(r['NIK (16 Digit)'] || r['NIK'] || r.NIK || '').trim(),
+                    nisn: String(r['NISN (10 Digit)'] || r['NISN'] || r.NISN || '').trim(),
+                    nama_lengkap: namaLengkap.trim(),
+                    tempat_lahir: tempatLahir.trim(),
+                    tanggal_lahir: parseTanggalLahir(tanggalLahirRaw),
+                    jenis_kelamin: jenisKelamin.trim().toUpperCase(),
+                    nama_orang_tua: namaOrangTua.trim(),
+                    kelas: kelas.trim(),
+                    keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
+                };
+            });
+            
+            console.log('PM Records to insert:', pmRecords);
+            await insertBulkPM(pmRecords);
+        }
+
+        if (parsedGuruData.length > 0) {
+            const guruRecords = parsedGuruData.map(r => {
+                const namaLengkap = r['NAMA LENGKAP (Sesuai KTP)'] || r['NAMA LENGKAP'] || r['Nama Lengkap'] || r['nama_lengkap'] || r['nama'] || '';
+                const tempatLahir = r['TEMPAT LAHIR (Kota/Kabupaten)'] || r['TEMPAT LAHIR'] || r['Tempat Lahir'] || r['tempat_lahir'] || '';
+                const tanggalLahirRaw = r['TANGGAL LAHIR (dd-mm-yyyy)'] || r['TANGGAL LAHIR'] || r['Tanggal Lahir'] || r['tanggal_lahir'] || '';
+                const jenisKelamin = r['JENIS KELAMIN (L/P)'] || r['JENIS KELAMIN'] || r['Jenis Kelamin'] || r['jenis_kelamin'] || r['jk'] || '';
+                const jabatan = r['JABATAN (Guru/Tendik)'] || r['JABATAN'] || r['Jabatan'] || r['jabatan'] || r['posisi'] || '';
+
+                return {
+                    sekolah_id: parseInt(sekolahId),
+                    npsn: npsn,
+                    nik: String(r['NIK (16 Digit)'] || r['NIK'] || r.NIK || '').trim(),
+                    nama_lengkap: namaLengkap.trim(),
+                    tempat_lahir: tempatLahir.trim(),
+                    tanggal_lahir: parseTanggalLahir(tanggalLahirRaw),
+                    jenis_kelamin: jenisKelamin.trim().toUpperCase(),
+                    jabatan: jabatan.trim(),
+                    keterangan: r['Keterangan'] || r['KETERANGAN'] || ''
+                };
+            });
+            
+            console.log('Guru Records to insert:', guruRecords);
+            await insertBulkGuru(guruRecords);
+        }
+
+        showToast(`✅ ${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik berhasil disimpan!`, 'success');
+        removeFile();
+        loadUploadedFiles();
+    } catch (error) {
+        console.error(error);
+        showToast('❌ Gagal upload: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="cloud-upload"></i> Upload & Simpan ke Database';
+        lucide.createIcons();
+    }
+}
+
+// ============================================
+// PARSE TANGGAL LAHIR
+// ============================================
+function parseTanggalLahir(tanggal) {
+    if (!tanggal) return null;
+    
+    if (tanggal instanceof Date) {
+        if (isNaN(tanggal.getTime())) return null;
+        const year = tanggal.getFullYear();
+        const month = String(tanggal.getMonth() + 1).padStart(2, '0');
+        const day = String(tanggal.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    const str = String(tanggal).trim();
+    const parts = str.split(/[-\/]/);
+    
+    if (parts.length === 3) {
+        let p1 = parseInt(parts[0]);
+        let p2 = parseInt(parts[1]);
+        let p3 = parseInt(parts[2]);
+        let day, month, year;
+        
+        if (parts[0].length === 4) {
+            year = p1; month = p2; day = p3;
+        } else if (parts[2].length === 4) {
+            year = p3;
+            if (p2 > 12) { month = p1; day = p2; } 
+            else if (p1 > 12) { day = p1; month = p2; } 
+            else { day = p1; month = p2; }
+        } else {
+            year = p3 > 30 ? 1900 + p3 : 2000 + p3;
+            if (p2 > 12) { month = p1; day = p2; } 
+            else if (p1 > 12) { day = p1; month = p2; } 
+            else { day = p1; month = p2; }
+        }
+        
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+            console.warn('Tanggal tidak valid:', str);
+            return null;
+        }
+        
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return str;
+    }
+    
+    console.warn('Format tanggal tidak dikenali:', str);
+    return null;
+}
+
+// ============================================
+// EXPORT DATA (DILENGKAPI)
 // ============================================
 function exportCurrentData() {
     if (!sensitiveDataUnlocked) {
@@ -675,12 +869,49 @@ function exportCurrentData() {
         openPasswordModal('unlock');
         return;
     }
-    showToast('Fitur export berjalan (pastikan library XLSX sudah dimuat)', 'success');
-    // ... (Logika export kode lamamu tetap di sini)
+    
+    let exportData = [];
+    let filename = '';
+
+    if (currentDataTab === 'sekolah') {
+        exportData = allSekolahData.map((d, i) => ({
+            'No': i + 1, 'Jenjang': d.jenjang, 'Nama Sekolah': d.nama_sekolah,
+            'Kepala Sekolah': d.nama_kepsek, 'NPSN': d.npsn, 'Alamat': d.alamat_sekolah,
+            'Nama PIC': d.nama_pic, 'No HP': d.nomor_hp, 'SPP': d.spp_bulanan
+        }));
+        filename = 'Export_Data_Sekolah';
+    } else if (currentDataTab === 'pm') {
+        exportData = allPMData.map((d, i) => ({
+            'No': i + 1, 'Sekolah': d.sekolah?.nama_sekolah, 'NIK': d.nik, 'NISN': d.nisn,
+            'Nama': d.nama_lengkap, 'Tempat Lahir': d.tempat_lahir, 
+            'Tanggal Lahir': d.tanggal_lahir, 'Jenis Kelamin': d.jenis_kelamin,
+            'Orang Tua': d.nama_orang_tua, 'Kelas': d.kelas
+        }));
+        filename = 'Export_Data_PM';
+    } else {
+        exportData = allGuruData.map((d, i) => ({
+            'No': i + 1, 'Sekolah': d.sekolah?.nama_sekolah, 'NIK': d.nik,
+            'Nama': d.nama_lengkap, 'Tempat Lahir': d.tempat_lahir,
+            'Tanggal Lahir': d.tanggal_lahir, 'Jenis Kelamin': d.jenis_kelamin,
+            'Jabatan': d.jabatan
+        }));
+        filename = 'Export_Data_Guru';
+    }
+
+    if (exportData.length === 0) {
+        showToast('Tidak ada data untuk diexport', 'error');
+        return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showToast('Data berhasil diexport!', 'success');
 }
 
 // ============================================
-// TOAST NOTIFICATION (DIPERBAIKI)
+// TOAST NOTIFICATION
 // ============================================
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
@@ -718,4 +949,15 @@ function closeModal(event) {
     if (event && event.target !== event.currentTarget) return;
     const modal = document.getElementById('modal');
     if (modal) modal.classList.remove('show');
+}
+
+// ============================================
+// HELPER: Format File Size
+// ============================================
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
