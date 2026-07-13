@@ -180,11 +180,11 @@ function validateKelas(kelasValue, rowIndex) {
     const kelasNum = parseInt(kelasStr);
     
     if (isNaN(kelasNum)) {
-        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasStr}" bukan angka. Harus angka 0-13` };
+        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasStr}" bukan angka. Harus angka 0-12` };
     }
     
     if (kelasNum < 0 || kelasNum > 13) {
-        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasNum}" di luar range. Harus angka 0-13 (TK=0, SD=1-6, dst)` };
+        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasNum}" di luar range. Harus angka 0-12 (TK=0, SD=1-6, dst)` };
     }
     
     return { valid: true, value: kelasNum };
