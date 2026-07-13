@@ -169,7 +169,7 @@ function validateHeaders(actualHeaders, expectedHeaders, sheetName) {
 }
 
 /**
- * Validasi Kolom KELAS (Harus Angka 0-13)
+ * Validasi Kolom KELAS (Harus Angka 0-12)
  */
 function validateKelas(kelasValue, rowIndex) {
     if (kelasValue === undefined || kelasValue === null || String(kelasValue).trim() === '' || String(kelasValue).trim() === '-') {
