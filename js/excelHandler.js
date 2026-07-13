@@ -430,7 +430,7 @@ function processMBGFile(file) {
                     toastMessage += `\n\n...dan ${validationErrors.length - 4} error lainnya.`;
                 }
                 
-                toastMessage += '\n\n💡 Download ulang template dan jangan ubah format header!';
+                toastMessage += '\n\n💡 Jangan mengubah format header. Silakan perbaiki data dan isi setiap kolom sesuai contoh yang tertera pada header, kemudian upload ulang.';
                 
                 showToast(toastMessage, 'error');
                 
