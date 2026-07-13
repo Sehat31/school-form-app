@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-    <body>
+<body>
     <!-- Script untuk clean URL -->
     <script>
         if (window.location.pathname === '/index.html') {
@@ -60,8 +60,8 @@
                         Data Tersimpan
                     </a>
                 </li>
-                 <li class="nav-item">
-                      <a href="distribusi.html" class="nav-link">
+                <li class="nav-item">
+                    <a href="distribusi.html" class="nav-link">
                         <i data-lucide="truck"></i>
                         Distribusi
                     </a>
@@ -75,12 +75,8 @@
             </ul>
         </div>
     </nav>
-        <!-- NAVIGATION -->
-    <nav class="navbar" id="navbar">
-        <!-- ... (kode navbar kamu tetap di sini) ... -->
-    </nav>
 
-    <!-- 🚨 RUNNING TEXT MAINTENANCE (TAMBAHKAN DI SINI) 🚨 -->
+    <!-- 🚨 RUNNING TEXT MAINTENANCE -->
     <div class="maintenance-banner">
         <div class="maintenance-text">
             ⚠️ Mohon maaf, sedang terjadi maintenance yang menyebabkan sebagian data sekolah hilang dan tidak dapat dipulihkan. Oleh karena itu, kami mohon Bapak/Ibu untuk mengisi kembali data sekolah masing-masing. **Pengecualian untuk SDN Jatian 01 dan SDN Pakusari 01**, karena data kedua sekolah tersebut berhasil kami pulihkan sehingga tidak perlu mengisi ulang.
@@ -120,7 +116,7 @@
                             <tr><td>Alamat Sekolah</td><td><code>Jl. Menteng Raya No. 10, Jakarta Pusat</code></td></tr>
                             <tr><td>Nama PIC</td><td><code>Budi Santoso, S.Pd</code></td></tr>
                             <tr><td>Nomor HP PIC</td><td><code>081234567890</code></td></tr>
-                            <tr><td>SPP Bulanan</td><td><code>500000</code> (angka saja)</td></tr>
+                            <tr><td>SPP Bulanan</td><td><code>Jika tidak ada biaya SPP, isi dengan angka 0 (nol).</code> (angka saja)</td></tr>
                         </tbody>
                     </table>
                     <button class="btn btn-outline btn-sm" onclick="fillExample()">
@@ -152,7 +148,7 @@
                                 <i data-lucide="building"></i> Nama Sekolah <span class="required">*</span>
                             </label>
                             <input type="text" id="nama_sekolah" name="nama_sekolah" 
-                                   placeholder="cth: SDN 1 Menteng" required>
+                                   placeholder="Contoh: SDN 1 Menteng" required>
                         </div>
 
                         <div class="form-group">
@@ -160,7 +156,7 @@
                                 <i data-lucide="user-check"></i> Nama Kepala Sekolah <span class="required">*</span>
                             </label>
                             <input type="text" id="nama_kepsek" name="nama_kepsek" 
-                                   placeholder="cth: Drs. H. Ahmad Dahlan, M.Pd" required>
+                                   placeholder="Contoh: Drs. H. Ahmad Dahlan, M.Pd" required>
                         </div>
 
                         <div class="form-group">
@@ -168,7 +164,7 @@
                                 <i data-lucide="hash"></i> NPSN <span class="required">*</span>
                             </label>
                             <input type="text" id="npsn" name="npsn" 
-                                   placeholder="cth: 20100123" maxlength="8" 
+                                   placeholder="Contoh: 20100123" maxlength="8" 
                                    pattern="[0-9]{8}" title="NPSN harus 8 digit angka" required>
                         </div>
 
@@ -177,7 +173,7 @@
                                 <i data-lucide="map-pin"></i> Alamat Sekolah <span class="required">*</span>
                             </label>
                             <textarea id="alamat_sekolah" name="alamat_sekolah" rows="3" 
-                                      placeholder="cth: Jl. Menteng Raya No. 10, Jakarta Pusat 10310" required></textarea>
+                                      placeholder="Contoh: Jl. Menteng Raya No. 10, Jakarta Pusat 10310" required></textarea>
                         </div>
 
                         <div class="form-group">
@@ -185,7 +181,7 @@
                                 <i data-lucide="user"></i> Nama PIC <span class="required">*</span>
                             </label>
                             <input type="text" id="nama_pic" name="nama_pic" 
-                                   placeholder="cth: Budi Santoso, S.Pd" required>
+                                   placeholder="Contoh: Budi Santoso, S.Pd" required>
                         </div>
 
                         <div class="form-group">
@@ -193,18 +189,18 @@
                                 <i data-lucide="phone"></i> Nomor HP PIC <span class="required">*</span>
                             </label>
                             <input type="tel" id="nomor_hp" name="nomor_hp" 
-                                   placeholder="cth: 081234567890" 
+                                   placeholder="Contoh: 081234567890" 
                                    pattern="[0-9]{10,15}" required>
                         </div>
 
                         <div class="form-group">
                             <label for="spp_bulanan">
-                                <i data-lucide="wallet"></i> SPP Bulanan (Rp) <span class="required">*</span>
+                                <i data-lucide="wallet"></i>SPP Bulanan (Rp) <em>(Isi 0 jika tidak dikenakan SPP)</em><span class="required">*</span>
                             </label>
                             <div class="input-with-prefix">
                                 <span class="input-prefix">Rp</span>
                                 <input type="text" id="spp_bulanan" name="spp_bulanan" 
-                                       placeholder="cth: 500000" required
+                                       placeholder="Contoh: 500000" required
                                        oninput="formatCurrency(this)">
                             </div>
                         </div>
@@ -328,7 +324,37 @@
                     <i data-lucide="upload"></i>
                     <h3>Upload File Excel</h3>
                 </div>
-                <p class="section-desc">Pilih file Excel yang sudah diisi, lalu upload</p>
+                
+                <!-- 🚨 NOTICE PENTING - PERINGATAN UPLOAD 🚨 -->
+                <div class="upload-notice">
+                    <div class="notice-header">
+                        <i data-lucide="alert-triangle"></i>
+                        <h4>PERHATIAN PENTING SEBELUM UPLOAD!</h4>
+                    </div>
+                    <ul class="notice-list">
+                        <li>
+                            <strong>JANGAN UBAH HEADER TEMPLATE!</strong> Sistem kami hanya dapat membaca file dengan nama header yang <u>persis sama</u> seperti pada template. Mengubah nama kolom akan menyebabkan file <strong>ditolak otomatis</strong>.
+                        </li>
+                        <li>
+                            <strong>WAJIB HAPUS BARIS CONTOH</strong> sebelum mengunggah file. Baris contoh hanya sebagai panduan pengisian dan tidak boleh ikut <strong>di-upload</strong>.
+                        </li>
+                        <li>
+                            <strong>Kolom KELAS wajib berisi angka 0 sampai 13:</strong>
+                            <ul class="notice-sublist">
+                                <li>• TK = <code>0</code></li>
+                                <li>• SD = <code>1</code> sampai <code>6</code></li>
+                                <li>• SMP = <code>7</code> sampai <code>9</code></li>
+                                <li>• SMA/SMK = <code>10</code> sampai <code>12</code></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Ikuti format template persis!</strong> Jangan menambah, mengurangi, atau memodifikasi struktur kolom di luar ketentuan.
+                        </li>
+                    </ul>
+                </div>
+                <!-- ========================================== -->
+                
+                <p class="section-desc">Pilih file Excel yang sudah diisi sesuai template, lalu upload</p>
                 
                 <div class="upload-zone" id="uploadZone" 
                      ondrop="handleDrop(event)" 
@@ -421,32 +447,30 @@
                 </div>
             </div>
 
-           
-
            <!-- Stats (sekaligus sebagai Menu Tab) -->
-<div class="stats-grid" id="statsGrid">
-    <div class="stat-card stat-clickable active" onclick="showDataTab('sekolah', event)" data-tab="sekolah">
-        <i data-lucide="school"></i>
-        <div>
-            <p class="stat-number" id="totalSekolah">0</p>
-            <p class="stat-label">Data Sekolah</p>
-        </div>
-    </div>
-    <div class="stat-card stat-clickable" onclick="showDataTab('pm', event)" data-tab="pm">
-        <i data-lucide="users"></i>
-        <div>
-            <p class="stat-number" id="totalPM">0</p>
-            <p class="stat-label">Penerima Manfaat</p>
-        </div>
-    </div>
-    <div class="stat-card stat-clickable" onclick="showDataTab('guru', event)" data-tab="guru">
-        <i data-lucide="user-check"></i>
-        <div>
-            <p class="stat-number" id="totalGuru">0</p>
-            <p class="stat-label">Guru & Tendik</p>
-        </div>
-    </div>
-</div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card stat-clickable active" onclick="showDataTab('sekolah', event)" data-tab="sekolah">
+                    <i data-lucide="school"></i>
+                    <div>
+                        <p class="stat-number" id="totalSekolah">0</p>
+                        <p class="stat-label">Data Sekolah</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-clickable" onclick="showDataTab('pm', event)" data-tab="pm">
+                    <i data-lucide="users"></i>
+                    <div>
+                        <p class="stat-number" id="totalPM">0</p>
+                        <p class="stat-label">Penerima Manfaat</p>
+                    </div>
+                </div>
+                <div class="stat-card stat-clickable" onclick="showDataTab('guru', event)" data-tab="guru">
+                    <i data-lucide="user-check"></i>
+                    <div>
+                        <p class="stat-number" id="totalGuru">0</p>
+                        <p class="stat-label">Guru & Tendik</p>
+                    </div>
+                </div>
+            </div>
 
             <!-- Search & Filter -->
             <div class="card">
@@ -498,8 +522,11 @@
 
     <!-- TOAST NOTIFICATION -->
     <div id="toast" class="toast">
-        <i data-lucide="check-circle" id="toastIcon"></i>
+        <i data-lucide="check-circle" id="toastIcon" style="flex-shrink: 0;"></i>
         <span id="toastMessage"></span>
+        <button id="toastCloseBtn" class="toast-close-btn" onclick="closeToast()" title="Tutup">
+            <i data-lucide="x"></i>
+        </button>
     </div>
 
     <!-- MODAL PASSWORD -->
@@ -521,7 +548,7 @@
                 <div class="password-input-group">
                     <label for="passwordInput">Password:</label>
                     <div class="password-field">
-                        <input type="password" id="passwordInput" placeholder="Masukkan password" 
+                        <input type="password" id="passwordInput" placeholder="Masukkan PIN" 
                                onkeypress="if(event.key==='Enter')checkPassword()">
                         <button class="toggle-password" onclick="togglePasswordVisibility()">
                             <i data-lucide="eye" id="passwordEyeIcon"></i>
