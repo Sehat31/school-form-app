@@ -464,14 +464,48 @@ async function loadUploadedFiles() {
     }
 }
 
+// ============================================
+//  PERBAIKAN 1: HAPUS FILE + HAPUS DATA DI DATABASE
+// ============================================
 async function deleteUploadedFile(path) {
-    if (!sensitiveDataUnlocked) { showUnlockWarning(); return; }
-    if (!confirm('Yakin ingin menghapus file ini?')) return;
+    if (!sensitiveDataUnlocked) { 
+        showUnlockWarning(); 
+        return; 
+    }
+    
+    if (!confirm('⚠️ Yakin ingin menghapus file ini?\n\nPERINGATAN: Data siswa & guru sekolah terkait di "Data Tersimpan" juga akan ikut terhapus!')) {
+        return;
+    }
+
     try {
+        // 1. Ambil nama file dari path (hapus 'excels/')
+        const fileName = path.replace('excels/', '');
+        
+        // 2. Cari metadata file untuk mendapatkan ID Sekolah
+        const files = await getUploadedFiles();
+        const fileToDelete = files.find(f => f.name === fileName);
+
+        // 3. Jika dapat ID Sekolah, hapus dari Database
+        if (fileToDelete && fileToDelete.metadata && fileToDelete.metadata.sekolah_id) {
+            const sekolahId = fileToDelete.metadata.sekolah_id;
+            console.log('Menghapus data database untuk sekolah ID:', sekolahId);
+            
+            await db.from('pm_mbg').delete().eq('sekolah_id', sekolahId);
+            await db.from('guru_tendik').delete().eq('sekolah_id', sekolahId);
+        }
+
+        // 4. Hapus dari Storage
         await deleteFileFromStorage(path);
-        showToast('File berhasil dihapus', 'success');
+        
+        showToast('File dan data terkait berhasil dihapus', 'success');
         loadUploadedFiles();
+        
+        // Refresh data tersimpan jika sedang di halaman data
+        if (document.getElementById('page-data').classList.contains('active')) {
+            loadAllData();
+        }
     } catch (error) {
+        console.error('Error deleting file:', error);
         showToast('Gagal menghapus file', 'error');
     }
 }
@@ -563,7 +597,7 @@ function renderSekolahTable(row, idx) {
     const nomorHP = renderSensitiveData(row.nomor_hp, 'phone', row.id);
     const deleteBtn = sensitiveDataUnlocked 
         ? `<button class="btn-icon delete" title="Hapus" onclick="deleteSekolah(${row.id})"><i data-lucide="trash-2"></i></button>`
-        : `<button class="btn-icon delete" title=" Buka sensor dulu" onclick="showUnlockWarning()"><i data-lucide="lock"></i></button>`;
+        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu" onclick="showUnlockWarning()"><i data-lucide="lock"></i></button>`;
     
     return `
         <td>${idx + 1}</td>
@@ -585,7 +619,7 @@ function renderPMTable(row, idx) {
     const tglLahir = row.tanggal_lahir ? formatDate(row.tanggal_lahir) : '-';
     const deleteBtn = sensitiveDataUnlocked 
         ? `<button class="btn-icon delete" title="Hapus" onclick="deletePMData(${row.id})"><i data-lucide="trash-2"></i></button>`
-        : `<button class="btn-icon delete" title="🔒 Buka sensor dulu" onclick="showUnlockWarning()"><i data-lucide="lock"></i></button>`;
+        : `<button class="btn-icon delete" title=" Buka sensor dulu" onclick="showUnlockWarning()"><i data-lucide="lock"></i></button>`;
     
     return `
         <td>${idx + 1}</td><td>${namaSekolah}</td><td>${nik}</td><td>${row.nisn || '-'}</td>
@@ -664,7 +698,7 @@ async function deleteGuruData(id) {
 }
 
 // ============================================
-// UPLOAD MBG FILE
+//  PERBAIKAN 2: AUTO-REPLACE SAAT UPLOAD (HAPUS DATA LAMA DULU)
 // ============================================
 async function uploadMBGFile() {
     const selectNpsn = document.getElementById('select_npsn_mbg');
@@ -722,7 +756,7 @@ async function uploadMBGFile() {
 
             if (crossSchoolDuplicates.length > 0) {
                 const dupNIKs = crossSchoolDuplicates.map(d => d.nik).join(', ');
-                showToast(`❌ NIK sudah ada di sekolah lain! NIK: ${dupNIKs}`, 'error');
+                showToast(` NIK sudah ada di sekolah lain! NIK: ${dupNIKs}`, 'error');
                 
                 btn.disabled = false;
                 btn.innerHTML = '<i data-lucide="cloud-upload"></i> Upload & Simpan ke Database';
@@ -734,12 +768,21 @@ async function uploadMBGFile() {
         const now = new Date();
         const timestamp = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
         const fileName = `${sekolahName.replace(/[^a-zA-Z0-9]/g, '_')}_${now.toISOString().split('T')[0]}_${timestamp}.xlsx`;
+        
         await uploadFileToStorageWithMetadata(selectedFile, {
             npsn: npsn,
             sekolah_id: sekolahId,
             sekolah_nama: sekolahName,
             uploaded_at: new Date().toISOString()
         }, fileName);
+
+        // ==========================================
+        //  HAPUS DATA LAMA DULU (AUTO-REPLACE)
+        // ==========================================
+        console.log('Menghapus data lama untuk sekolah ID:', sekolahId);
+        await db.from('pm_mbg').delete().eq('sekolah_id', sekolahId);
+        await db.from('guru_tendik').delete().eq('sekolah_id', sekolahId);
+        // ==========================================
 
         if (parsedPMData.length > 0) {
             const pmRecords = parsedPMData.map(r => {
@@ -797,6 +840,11 @@ async function uploadMBGFile() {
         showToast(`✅ ${parsedPMData.length} PM + ${parsedGuruData.length} Guru/Tendik berhasil disimpan!`, 'success');
         removeFile();
         loadUploadedFiles();
+        
+        // Refresh data tersimpan jika sedang di halaman data
+        if (document.getElementById('page-data').classList.contains('active')) {
+            loadAllData();
+        }
     } catch (error) {
         console.error(error);
         showToast('❌ Gagal upload: ' + error.message, 'error');
@@ -861,7 +909,7 @@ function parseTanggalLahir(tanggal) {
 }
 
 // ============================================
-// EXPORT DATA (DILENGKAPI)
+// EXPORT DATA
 // ============================================
 function exportCurrentData() {
     if (!sensitiveDataUnlocked) {

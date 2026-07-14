@@ -28,6 +28,11 @@ const EXPECTED_GURU_HEADERS = [
     'KETERANGAN (Opsional)'
 ];
 
+// Konstanta Validasi
+const MAX_ROWS_PER_SHEET = 500; // Maksimal 500 baris per sheet
+const MIN_AGE_YEARS = 3;        // Usia minimal 3 tahun (TK)
+const MAX_AGE_YEARS = 80;       // Usia maksimal 80 tahun (Guru senior)
+
 /**
  * Download Template MBG Excel dengan Format Warna (ExcelJS)
  */
@@ -169,7 +174,7 @@ function validateHeaders(actualHeaders, expectedHeaders, sheetName) {
 }
 
 /**
- * Validasi Kolom KELAS (Harus Angka 0-12)
+ * Validasi Kolom KELAS (Harus Angka 0-13)
  */
 function validateKelas(kelasValue, rowIndex) {
     if (kelasValue === undefined || kelasValue === null || String(kelasValue).trim() === '' || String(kelasValue).trim() === '-') {
@@ -180,11 +185,11 @@ function validateKelas(kelasValue, rowIndex) {
     const kelasNum = parseInt(kelasStr);
     
     if (isNaN(kelasNum)) {
-        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasStr}" bukan angka. Harus angka 0-12` };
+        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasStr}" bukan angka. Harus angka 0-13` };
     }
     
     if (kelasNum < 0 || kelasNum > 13) {
-        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasNum}" di luar range. Harus angka 0-12 (TK=0, SD=1-6, dst)` };
+        return { valid: false, message: `Baris ${rowIndex}: KELAS "${kelasNum}" di luar range. Harus angka 0-13 (TK=0, SD=1-6, dst)` };
     }
     
     return { valid: true, value: kelasNum };
@@ -233,7 +238,139 @@ function validateExampleRows(row, rowIndex, sheetName) {
 }
 
 /**
- * Process MBG Excel file dengan validasi NIK, Header, Kelas & Baris Contoh
+ * Validasi NIK - WAJIB ISI
+ */
+function validateNIKWajib(nik, rowIndex) {
+    const str = String(nik || '').trim();
+    if (!str || str === '') {
+        return { valid: false, message: `Baris ${rowIndex}: NIK tidak boleh kosong!` };
+    }
+    return { valid: true, value: str };
+}
+
+/**
+ * Validasi NISN (10 digit angka, boleh kosong tapi jika ada harus valid)
+ */
+function validateNISN(nisn, rowIndex) {
+    const str = String(nisn || '').trim();
+    if (!str) {
+        return { valid: true, value: '' }; // NISN boleh kosong
+    }
+    if (!/^\d{10}$/.test(str)) {
+        return { valid: false, message: `Baris ${rowIndex}: NISN "${str}" tidak valid. Harus 10 digit angka` };
+    }
+    return { valid: true, value: str };
+}
+
+/**
+ * Validasi Nama Lengkap - WAJIB ISI
+ */
+function validateNamaLengkap(nama, rowIndex, sheet) {
+    const str = String(nama || '').trim();
+    if (!str || str.length < 2) {
+        return { valid: false, message: `Baris ${rowIndex}: Nama Lengkap di sheet ${sheet} kosong atau terlalu pendek (min. 2 karakter)` };
+    }
+    return { valid: true, value: str };
+}
+
+/**
+ * Validasi Jenis Kelamin - WAJIB 'L' atau 'P'
+ */
+function validateJenisKelamin(jk, rowIndex) {
+    const str = String(jk || '').trim().toUpperCase();
+    if (!str) {
+        return { valid: false, message: `Baris ${rowIndex}: Jenis Kelamin kosong. Harus 'L' atau 'P'` };
+    }
+    if (str !== 'L' && str !== 'P') {
+        return { valid: false, message: `Baris ${rowIndex}: Jenis Kelamin "${str}" tidak valid. Harus 'L' (Laki-laki) atau 'P' (Perempuan)` };
+    }
+    return { valid: true, value: str };
+}
+
+/**
+ * Validasi Tanggal Lahir
+ */
+function validateTanggalLahir(tanggal, rowIndex) {
+    if (!tanggal) {
+        return { valid: false, message: `Baris ${rowIndex}: Tanggal Lahir kosong` };
+    }
+    
+    const date = parseTanggalLahirForValidation(tanggal);
+    if (!date) {
+        return { valid: false, message: `Baris ${rowIndex}: Format Tanggal Lahir tidak valid. Gunakan format dd-mm-yyyy` };
+    }
+    
+    const today = new Date();
+    const birthDate = new Date(date);
+    
+    // Cek tidak di masa depan
+    if (birthDate > today) {
+        return { valid: false, message: `Baris ${rowIndex}: Tanggal Lahir tidak boleh di masa depan` };
+    }
+    
+    // Cek usia wajar
+    const age = today.getFullYear() - birthDate.getFullYear();
+    if (age < MIN_AGE_YEARS) {
+        return { valid: false, message: `Baris ${rowIndex}: Usia terlalu muda (${age} tahun). Minimal ${MIN_AGE_YEARS} tahun` };
+    }
+    if (age > MAX_AGE_YEARS) {
+        return { valid: false, message: `Baris ${rowIndex}: Usia terlalu tua (${age} tahun). Maksimal ${MAX_AGE_YEARS} tahun` };
+    }
+    
+    return { valid: true, value: date };
+}
+
+/**
+ * Parse Tanggal Lahir untuk Validasi
+ */
+function parseTanggalLahirForValidation(tanggal) {
+    if (tanggal instanceof Date) {
+        if (isNaN(tanggal.getTime())) return null;
+        const year = tanggal.getFullYear();
+        const month = String(tanggal.getMonth() + 1).padStart(2, '0');
+        const day = String(tanggal.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    const str = String(tanggal).trim();
+    const parts = str.split(/[-\/]/);
+    
+    if (parts.length === 3) {
+        let p1 = parseInt(parts[0]);
+        let p2 = parseInt(parts[1]);
+        let p3 = parseInt(parts[2]);
+        let day, month, year;
+        
+        if (parts[0].length === 4) {
+            year = p1; month = p2; day = p3;
+        } else if (parts[2].length === 4) {
+            year = p3;
+            if (p2 > 12) { month = p1; day = p2; } 
+            else if (p1 > 12) { day = p1; month = p2; } 
+            else { day = p1; month = p2; }
+        } else {
+            year = p3 > 30 ? 1900 + p3 : 2000 + p3;
+            if (p2 > 12) { month = p1; day = p2; } 
+            else if (p1 > 12) { day = p1; month = p2; } 
+            else { day = p1; month = p2; }
+        }
+        
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+            return null;
+        }
+        
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return str;
+    }
+    
+    return null;
+}
+
+/**
+ * Process MBG Excel file dengan validasi LENGKAP
  */
 function processMBGFile(file) {
     const validExts = ['.xlsx', '.xls'];
@@ -241,6 +378,11 @@ function processMBGFile(file) {
 
     if (!validExts.includes(ext)) {
         showToast('❌ Format file tidak didukung!\nGunakan file .xlsx atau .xls', 'error');
+        return;
+    }
+
+    if (file.size === 0) {
+        showToast('❌ File kosong (0 byte)!\nFile tidak valid', 'error');
         return;
     }
 
@@ -279,11 +421,17 @@ function processMBGFile(file) {
             }
 
             let validationErrors = [];
+            let allNIKsInFile = []; // Untuk cek duplikat antar sheet
 
             // --- PARSE & VALIDASI PM (SISWA) ---
             if (pmSheetName) {
                 const pmSheet = workbook.Sheets[pmSheetName];
                 const pmJson = XLSX.utils.sheet_to_json(pmSheet, { defval: "", dateNF: 'dd-mm-yyyy' });
+                
+                // Cek jumlah baris
+                if (pmJson.length > MAX_ROWS_PER_SHEET) {
+                    validationErrors.push(`❌ Sheet PM memiliki ${pmJson.length} baris. Maksimal ${MAX_ROWS_PER_SHEET} baris per sheet!`);
+                }
                 
                 if (pmJson.length > 0) {
                     const actualHeaders = Object.keys(pmJson[0]);
@@ -294,25 +442,25 @@ function processMBGFile(file) {
                         let invalidNIKCount = 0;
                         let invalidNIKList = [];
                         let allNIKs = [];
+                        let nisnList = []; // Untuk cek duplikat NISN
 
                         pmJson.forEach((row, index) => {
                             const rowIndex = index + 2;
                             
+                            // Validasi Baris Contoh
                             const exampleCheck = validateExampleRows(row, rowIndex, pmSheetName);
                             if (!exampleCheck.valid) {
                                 validationErrors.push(exampleCheck.message);
                             }
                             
-                            const kelasCheck = validateKelas(row['KELAS (Contoh: 1,7,10)'], rowIndex);
-                            if (!kelasCheck.valid) {
-                                validationErrors.push(kelasCheck.message);
+                            // Validasi NIK - WAJIB
+                            const nikCheck = validateNIKWajib(row['NIK (16 Digit)'], rowIndex);
+                            if (!nikCheck.valid) {
+                                validationErrors.push(nikCheck.message);
                             } else {
-                                row['KELAS (Contoh: 1,7,10)'] = String(kelasCheck.value);
-                            }
-
-                            const nik = String(row['NIK (16 Digit)'] || '').trim();
-                            if (nik) {
+                                const nik = nikCheck.value;
                                 allNIKs.push({ nik, sheet: 'PM', row: rowIndex });
+                                allNIKsInFile.push({ nik, sheet: 'PM', row: rowIndex });
                                 const result = validateNIK(nik);
                                 if (!result.valid) {
                                     invalidNIKCount++;
@@ -321,8 +469,43 @@ function processMBGFile(file) {
                                     }
                                 }
                             }
+                            
+                            // Validasi NISN
+                            const nisnCheck = validateNISN(row['NISN (10 Digit)'], rowIndex);
+                            if (!nisnCheck.valid) {
+                                validationErrors.push(nisnCheck.message);
+                            } else if (nisnCheck.value) {
+                                nisnList.push({ nisn: nisnCheck.value, row: rowIndex });
+                            }
+                            
+                            // Validasi Nama Lengkap
+                            const namaCheck = validateNamaLengkap(row['NAMA LENGKAP (Sesuai Akta/KTP)'], rowIndex, 'PM');
+                            if (!namaCheck.valid) {
+                                validationErrors.push(namaCheck.message);
+                            }
+                            
+                            // Validasi Jenis Kelamin
+                            const jkCheck = validateJenisKelamin(row['JENIS KELAMIN (L/P)'], rowIndex);
+                            if (!jkCheck.valid) {
+                                validationErrors.push(jkCheck.message);
+                            }
+                            
+                            // Validasi Tanggal Lahir
+                            const tglCheck = validateTanggalLahir(row['TANGGAL LAHIR (dd-mm-yyyy)'], rowIndex);
+                            if (!tglCheck.valid) {
+                                validationErrors.push(tglCheck.message);
+                            }
+                            
+                            // Validasi KELAS
+                            const kelasCheck = validateKelas(row['KELAS (Contoh: 1,7,10)'], rowIndex);
+                            if (!kelasCheck.valid) {
+                                validationErrors.push(kelasCheck.message);
+                            } else {
+                                row['KELAS (Contoh: 1,7,10)'] = String(kelasCheck.value);
+                            }
                         });
 
+                        // Cek Duplikat NIK dalam sheet PM
                         const nikCount = {};
                         allNIKs.forEach(item => { nikCount[item.nik] = (nikCount[item.nik] || 0) + 1; });
                         
@@ -334,7 +517,25 @@ function processMBGFile(file) {
                                     duplicateNIKList.push({
                                         nik: item.nik,
                                         count: nikCount[item.nik],
-                                        locations: allNIKs.filter(d => d.nik === item.nik).map(d => `${d.sheet} Baris ${d.row}`)
+                                        locations: allNIKs.filter(d => d.nik === item.nik).map(d => `Baris ${d.row}`)
+                                    });
+                                }
+                            }
+                        });
+
+                        // Cek Duplikat NISN dalam sheet PM
+                        const nisnCount = {};
+                        nisnList.forEach(item => { nisnCount[item.nisn] = (nisnCount[item.nisn] || 0) + 1; });
+                        
+                        const duplicateNISNList = [];
+                        nisnList.forEach(item => {
+                            if (nisnCount[item.nisn] > 1) {
+                                const isDuplicate = duplicateNISNList.find(d => d.nisn === item.nisn);
+                                if (!isDuplicate) {
+                                    duplicateNISNList.push({
+                                        nisn: item.nisn,
+                                        count: nisnCount[item.nisn],
+                                        rows: nisnList.filter(d => d.nisn === item.nisn).map(d => d.row)
                                     });
                                 }
                             }
@@ -344,7 +545,10 @@ function processMBGFile(file) {
                             validationErrors.push(`❌ ${invalidNIKCount} NIK tidak valid di sheet PM.\nContoh: ${invalidNIKList.slice(0, 2).join('\n')}`);
                         }
                         if (duplicateNIKList.length > 0) {
-                            validationErrors.push(`❌ ${duplicateNIKList.length} NIK duplikat di sheet PM.\nContoh: ${duplicateNIKList.slice(0, 2).map(d => `${d.nik} (${d.count}x)`).join('\n')}`);
+                            validationErrors.push(`❌ ${duplicateNIKList.length} NIK duplikat di sheet PM.\nContoh: ${duplicateNIKList.slice(0, 2).map(d => `${d.nik} (${d.count}x di baris ${d.locations.join(', ')})`).join('\n')}`);
+                        }
+                        if (duplicateNISNList.length > 0) {
+                            validationErrors.push(`❌ ${duplicateNISNList.length} NISN duplikat di sheet PM.\nContoh: ${duplicateNISNList.slice(0, 2).map(d => `${d.nisn} (${d.count}x di baris ${d.rows.join(', ')})`).join('\n')}`);
                         }
                     }
                 }
@@ -359,6 +563,11 @@ function processMBGFile(file) {
                 const guruSheet = workbook.Sheets[guruSheetName];
                 const guruJson = XLSX.utils.sheet_to_json(guruSheet, { defval: "", dateNF: 'dd-mm-yyyy' });
                 
+                // Cek jumlah baris
+                if (guruJson.length > MAX_ROWS_PER_SHEET) {
+                    validationErrors.push(`❌ Sheet Guru memiliki ${guruJson.length} baris. Maksimal ${MAX_ROWS_PER_SHEET} baris per sheet!`);
+                }
+                
                 if (guruJson.length > 0) {
                     const actualHeaders = Object.keys(guruJson[0]);
                     const headerCheck = validateHeaders(actualHeaders, EXPECTED_GURU_HEADERS, guruSheetName);
@@ -372,14 +581,20 @@ function processMBGFile(file) {
                         guruJson.forEach((row, index) => {
                             const rowIndex = index + 2;
                             
+                            // Validasi Baris Contoh
                             const exampleCheck = validateExampleRows(row, rowIndex, guruSheetName);
                             if (!exampleCheck.valid) {
                                 validationErrors.push(exampleCheck.message);
                             }
                             
-                            const nik = String(row['NIK (16 Digit)'] || '').trim();
-                            if (nik) {
+                            // Validasi NIK - WAJIB
+                            const nikCheck = validateNIKWajib(row['NIK (16 Digit)'], rowIndex);
+                            if (!nikCheck.valid) {
+                                validationErrors.push(nikCheck.message);
+                            } else {
+                                const nik = nikCheck.value;
                                 allNIKs.push({ nik, sheet: 'Guru', row: rowIndex });
+                                allNIKsInFile.push({ nik, sheet: 'Guru', row: rowIndex });
                                 const result = validateNIK(nik);
                                 if (!result.valid) {
                                     invalidNIKCount++;
@@ -388,8 +603,27 @@ function processMBGFile(file) {
                                     }
                                 }
                             }
+                            
+                            // Validasi Nama Lengkap
+                            const namaCheck = validateNamaLengkap(row['NAMA LENGKAP (Sesuai KTP)'], rowIndex, 'Guru');
+                            if (!namaCheck.valid) {
+                                validationErrors.push(namaCheck.message);
+                            }
+                            
+                            // Validasi Jenis Kelamin
+                            const jkCheck = validateJenisKelamin(row['JENIS KELAMIN (L/P)'], rowIndex);
+                            if (!jkCheck.valid) {
+                                validationErrors.push(jkCheck.message);
+                            }
+                            
+                            // Validasi Tanggal Lahir
+                            const tglCheck = validateTanggalLahir(row['TANGGAL LAHIR (dd-mm-yyyy)'], rowIndex);
+                            if (!tglCheck.valid) {
+                                validationErrors.push(tglCheck.message);
+                            }
                         });
 
+                        // Cek Duplikat NIK dalam sheet Guru
                         const nikCount = {};
                         allNIKs.forEach(item => { nikCount[item.nik] = (nikCount[item.nik] || 0) + 1; });
                         
@@ -401,17 +635,17 @@ function processMBGFile(file) {
                                     duplicateNIKList.push({
                                         nik: item.nik,
                                         count: nikCount[item.nik],
-                                        locations: allNIKs.filter(d => d.nik === item.nik).map(d => `${d.sheet} Baris ${d.row}`)
+                                        locations: allNIKs.filter(d => d.nik === item.nik).map(d => `Baris ${d.row}`)
                                     });
                                 }
                             }
                         });
 
                         if (invalidNIKCount > 0) {
-                            validationErrors.push(`❌ ${invalidNIKCount} NIK tidak valid di sheet Guru.\nContoh: ${invalidNIKList.slice(0, 2).join('\n')}`);
+                            validationErrors.push(` ${invalidNIKCount} NIK tidak valid di sheet Guru.\nContoh: ${invalidNIKList.slice(0, 2).join('\n')}`);
                         }
                         if (duplicateNIKList.length > 0) {
-                            validationErrors.push(`❌ ${duplicateNIKList.length} NIK duplikat di sheet Guru.\nContoh: ${duplicateNIKList.slice(0, 2).map(d => `${d.nik} (${d.count}x)`).join('\n')}`);
+                            validationErrors.push(`❌ ${duplicateNIKList.length} NIK duplikat di sheet Guru.\nContoh: ${duplicateNIKList.slice(0, 2).map(d => `${d.nik} (${d.count}x di baris ${d.locations.join(', ')})`).join('\n')}`);
                         }
                     }
                 }
@@ -421,16 +655,39 @@ function processMBGFile(file) {
                 parsedGuruData = [];
             }
 
+            // --- CEK DUPLIKAT NIK ANTAR SHEET (PM vs Guru) ---
+            const nikBySheet = {};
+            allNIKsInFile.forEach(item => {
+                if (!nikBySheet[item.nik]) nikBySheet[item.nik] = [];
+                nikBySheet[item.nik].push(item);
+            });
+            
+            const crossSheetDuplicates = [];
+            Object.keys(nikBySheet).forEach(nik => {
+                const sheets = nikBySheet[nik].map(item => item.sheet);
+                const uniqueSheets = [...new Set(sheets)];
+                if (uniqueSheets.length > 1) {
+                    crossSheetDuplicates.push({
+                        nik: nik,
+                        locations: nikBySheet[nik].map(item => `${item.sheet} Baris ${item.row}`)
+                    });
+                }
+            });
+            
+            if (crossSheetDuplicates.length > 0) {
+                validationErrors.push(`❌ ${crossSheetDuplicates.length} NIK ditemukan di 2 sheet (PM & Guru).\nContoh: ${crossSheetDuplicates.slice(0, 2).map(d => `${d.nik} di ${d.locations.join(' & ')}`).join('\n')}`);
+            }
+
             // --- HASIL VALIDASI AKHIR ---
             if (validationErrors.length > 0) {
-                let toastMessage = '⚠️ UPLOAD DITOLAK!\n\nFile tidak valid. Mohon perbaiki:\n\n';
+                let toastMessage = '️ UPLOAD DITOLAK!\n\nFile tidak valid. Mohon perbaiki:\n\n';
                 toastMessage += validationErrors.slice(0, 4).join('\n\n');
                 
                 if (validationErrors.length > 4) {
                     toastMessage += `\n\n...dan ${validationErrors.length - 4} error lainnya.`;
                 }
                 
-                toastMessage += '\n\n💡 Jangan mengubah format header. Silakan perbaiki data dan isi setiap kolom sesuai contoh yang tertera pada header, kemudian upload ulang.';
+                toastMessage += '\n\n Baca terlebih dahulu Papan "PERHATIAN" yang tersedia pada halaman ini. Pastikan header tidak diubah, baris contoh sudah dihapus, dan seluruh data memenuhi ketentuan validasi.';
                 
                 showToast(toastMessage, 'error');
                 
@@ -442,7 +699,7 @@ function processMBGFile(file) {
             } else {
                 const totalRows = parsedPMData.length + parsedGuruData.length;
                 if (totalRows === 0) {
-                    showToast('❌ File kosong!\nPastikan sheet berisi data (hapus baris contoh jika perlu)', 'error');
+                    showToast(' File kosong!\nPastikan sheet berisi data (hapus baris contoh jika perlu)', 'error');
                     removeFile();
                 } else {
                     showToast(`✅ File valid!\n${parsedPMData.length} Siswa + ${parsedGuruData.length} Guru siap diupload`, 'success');

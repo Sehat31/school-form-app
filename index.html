@@ -25,18 +25,24 @@
         }
     </script>
 
-    <!-- HEADER -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <i data-lucide="school" class="logo-icon"></i>
-                <h1>PENERIMA MANFAAT SPPG JATIAN</h1>
-            </div>
-            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-                <i data-lucide="menu"></i>
-            </button>
+   <header class="header">
+    <div class="header-content">
+        <!-- Logo Kiri (dengan glow hitam) -->
+        <div class="header-logo-left">
+            <img src="images/logo-bgn.png" alt="Logo SPPG" class="logo-img">
         </div>
-    </header>
+        
+        <!-- Judul Tengah -->
+        <div class="header-title">
+            <h1>PENERIMA MANFAAT SPPG JATIAN</h1>
+        </div>
+        
+        <!-- Tombol Menu Mobile -->
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <i data-lucide="menu"></i>
+        </button>
+    </div>
+</header>
 
     <!-- NAVIGATION -->
     <nav class="navbar" id="navbar">
@@ -268,31 +274,74 @@
                     <h3>Upload File Excel</h3>
                 </div>
                 
-                <!-- 🚨 NOTICE PENTING -->
-                <div class="upload-notice">
-                    <div class="notice-header">
-                        <i data-lucide="alert-triangle"></i>
-                        <h4>PERHATIAN PENTING SEBELUM UPLOAD!</h4>
-                    </div>
-                    <ul class="notice-list">
-                        <li>
-                            <strong>JANGAN UBAH HEADER TEMPLATE!</strong> Sistem kami hanya dapat membaca file dengan nama header yang <u>persis sama</u> seperti pada template.
-                        </li>
-                        <li>
-                            <strong>WAJIB HAPUS BARIS CONTOH</strong> sebelum mengunggah file. Baris contoh hanya sebagai panduan dan tidak boleh ikut di-upload.
-                        </li>
-                        <li>
-                            <strong>Kolom KELAS wajib berisi angka 0 sampai 12:</strong>
-                            <ul class="notice-sublist">
-                                <li>• TK = <code>0</code></li>
-                                <li>• SD = <code>1</code> sampai <code>6</code></li>
-                                <li>• SMP = <code>7</code> sampai <code>9</code></li>
-                                <li>• SMA/SMK = <code>10</code> sampai <code>12</code></li>
-                            </ul>
-                        </li>
-                        
-                    </ul>
-                </div>
+<!-- 🚨 NOTICE PENTING (Awalnya tersembunyi dengan style display: none) -->
+<div id="uploadNotice" class="upload-notice" style="display: none;">
+    
+    <!-- BAGIAN ATAS (OPERASIONAL) -->
+    <div class="notice-header">
+        <i data-lucide="alert-triangle"></i>
+        <h4>PERHATIAN PENTING SEBELUM UPLOAD!</h4>
+    </div>
+    
+    <ul class="notice-list">
+        <li>
+            <strong>DILARANG MENGUBAH HEADER!</strong> Nama kolom pada template harus persis sama. Jangan diubah sedikit pun.
+        </li>
+        <li>
+            <strong>WAJIB HAPUS BARIS CONTOH!</strong> Hapus baris data contoh sebelum file disimpan dan diunggah.
+        </li>
+        <li>
+            <strong>UPLOAD ULANG:</strong> File baru otomatis menghapus total data lama sekolah tersebut. Sistem hanya menyimpan data versi terbaru.
+        </li>
+        <li>
+            <strong>HAPUS FILE:</strong> Ikon sampah hanya muncul untuk Super Admin (Wajib Password). Klik hapus akan membersihkan file dan seluruh data sekolah dari database.
+        </li>
+        <li>
+            <strong>ATURAN KOLOM KELAS (KHUSUS SISWA):</strong> Wajib isi angka sesuai jenjang berikut:
+            <ul class="notice-sublist">
+                <li>• TK = <code>0</code></li>
+                <li>• SD = <code>1</code> s/d <code>6</code></li>
+                <li>• SMP = <code>7</code> s/d <code>9</code></li>
+                <li>• SMA/SMK = <code>10</code> s/d <code>12</code></li>
+            </ul>
+        </li>
+    </ul>
+
+    <!-- PEMBATAS -->
+    <hr>
+
+    <!-- BAGIAN BAWAH (VALIDASI DATA) -->
+    <div class="notice-header header-danger">
+        <i data-lucide="shield-alert"></i>
+        <h4>ATURAN VALIDASI DATA:</h4>
+    </div>
+    
+    <ul class="notice-list list-danger">
+        <li>
+            <strong>NIK:</strong> Wajib 16 digit angka asli. Harus sinkron dengan Jenis Kelamin & Tanggal Lahir (Dilarang kosong/strip).
+        </li>
+        <li>
+            <strong>NAMA LENGKAP:</strong> Wajib diisi sesuai Kartu Keluarga (KK) atau Akta Kelahiran.
+        </li>
+        <li>
+            <strong>NISN (KHUSUS SISWA):</strong> Wajib berisi 10 digit angka.
+        </li>
+        <li>
+            <strong>JENIS KELAMIN:</strong> Hanya isi huruf kapital <code>L</code> atau <code>P</code>.
+        </li>
+        <li>
+            <strong>TANGGAL LAHIR:</strong> Wajib valid & sinkron dengan NIK (Bukan tanggal masa depan/asal isi).
+        </li>
+    </ul>
+
+    <!-- 📥 TOMBOL KONFIRMASI BARU DI BAWAH -->
+    <div style="text-align: right; margin-top: 12px; padding-top: 8px; border-top: 1px dashed rgba(217, 119, 6, 0.3);">
+        <button type="button" class="btn btn-sm btn-primary" onclick="tutupNotice()" style="cursor: pointer; font-weight: 600;">
+            <i data-lucide="check-circle" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+            Saya Siap Mengunggah File
+        </button>
+    </div>
+</div>
                 
                 <div class="upload-zone" id="uploadZone" 
                      ondrop="handleDrop(event)" 
@@ -526,5 +575,30 @@
     <script>
         lucide.createIcons();
     </script>
+
+
+
+    <!-- SCRIPT BARU AMAN: LOGIKA SHOW/HIDE UPLOAD NOTICE -->
+    <script>
+        // Gunakan Event Listener pada dropdown NPSN Sekolah Anda
+        document.getElementById('select_npsn_mbg').addEventListener('change', function() {
+            var noticeBox = document.getElementById('uploadNotice');
+            
+            // Jika memilih sekolah (value tidak kosong)
+            if (this.value !== "") {
+                noticeBox.style.display = 'block'; // Tampilkan kotak notice
+            } else {
+                noticeBox.style.display = 'none';  // Sembunyikan jika kembali memilih default
+            }
+        });
+
+        // Fungsi penutupan manual lewat tombol silang (x)
+        function tutupNotice() {
+            document.getElementById('uploadNotice').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
 </body>
 </html>
